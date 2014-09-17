@@ -12,9 +12,9 @@ float FilterValue (__constant const float* filterWeights,
 __kernel void Filter (
 	__read_only image2d_t input,
 	__constant float* filterWeights,
-	__write_only image2d_t output)
+	__write_only image2d_t output,
+	__constant float* example)
 {
-
     const int2 pos = {get_global_id(0), get_global_id(1)};
 
     float4 sum = (float4)(0.0f);
@@ -25,5 +25,5 @@ __kernel void Filter (
         }
     }
 
-    write_imagef (output, (int2)(pos.x, pos.y), sum);
+    write_imagef (output, (int2)(pos.x, pos.y), example);
 }

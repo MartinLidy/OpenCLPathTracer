@@ -10,6 +10,36 @@
 	#include "CL/cl.h"
 #endif
 
+static cl_command_queue command_queue = NULL;
+
+
+struct vector3d
+{
+	float X, Y, Z;
+
+	inline vector3d(void) {}
+	inline vector3d(const float x, const float y, const float z)
+	{
+		X = x; Y = y; Z = z;
+	}
+
+	inline vector3d operator + (const vector3d& A) const
+	{
+		return vector3d(X + A.X, Y + A.Y, Z + A.Z);
+	}
+
+	inline vector3d operator + (const float A) const
+	{
+		return vector3d(X + A, Y + A, Z + A);
+	}
+
+	inline float Dot(const vector3d& A) const
+	{
+		return A.X*X + A.Y*Y + A.Z*Z;
+	}
+};
+
+
 struct Image
 {
 	std::vector<char> pixel;
@@ -271,10 +301,19 @@ int main ()
 		sizeof (float) * 9, filter, &error);
 	CheckError (error);
 
+	vector3d SpherePos = {0,0,0};
+	
+
+	// 
+	const float examValue = 0.4f;
+	const cl_mem exam = clCreateBuffer(context, CL_MEM_READ_ONLY, sizeof(float), NULL, &error);
+	error = clEnqueueWriteBuffer(command_queue, exam, CL_TRUE, 0, sizeof(float), &examValue, 0, NULL, NULL);
+
 	// Setup the kernel arguments
 	clSetKernelArg (kernel, 0, sizeof (cl_mem), &inputImage);
 	clSetKernelArg (kernel, 1, sizeof (cl_mem), &filterWeightsBuffer);
 	clSetKernelArg (kernel, 2, sizeof (cl_mem), &outputImage);
+	clSetKernelArg (kernel, 3, sizeof (cl_mem), &exam);
 	
 	// http://www.khronos.org/registry/cl/sdk/1.1/docs/man/xhtml/clCreateCommandQueue.html
 	cl_command_queue queue = clCreateCommandQueue(context, deviceIds[0], 0, &error);
