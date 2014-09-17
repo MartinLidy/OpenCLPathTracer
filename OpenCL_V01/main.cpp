@@ -297,23 +297,21 @@ int main ()
 
 	// Create a buffer for the filter weights
 	// http://www.khronos.org/registry/cl/sdk/1.1/docs/man/xhtml/clCreateBuffer.html
-	cl_mem filterWeightsBuffer = clCreateBuffer (context, CL_MEM_READ_ONLY | CL_MEM_COPY_HOST_PTR,
-		sizeof (float) * 9, filter, &error);
+	cl_mem filterWeightsBuffer = clCreateBuffer (context, CL_MEM_READ_ONLY | CL_MEM_COPY_HOST_PTR, sizeof (float) * 9, filter, &error);
 	CheckError (error);
 
-	vector3d SpherePos = {0,0,0};
+	//vector3d SpherePos = {0,0,0};
 	
-
 	// 
-	const float examValue = 0.4f;
-	const cl_mem exam = clCreateBuffer(context, CL_MEM_READ_ONLY, sizeof(float), NULL, &error);
-	error = clEnqueueWriteBuffer(command_queue, exam, CL_TRUE, 0, sizeof(float), &examValue, 0, NULL, NULL);
+	float SpherePosValue[] = { 0.4f, 1.0, 0.0, 0 };
+	cl_mem SpherePos = clCreateBuffer(context, CL_MEM_READ_ONLY | CL_MEM_COPY_HOST_PTR, sizeof(float)*4, &SpherePosValue, &error);
+	//error = clEnqueueWriteBuffer(command_queue, SpherePos, CL_TRUE, 0, sizeof(float)*4, &SpherePosValue, 0, NULL, NULL);
 
 	// Setup the kernel arguments
 	clSetKernelArg (kernel, 0, sizeof (cl_mem), &inputImage);
 	clSetKernelArg (kernel, 1, sizeof (cl_mem), &filterWeightsBuffer);
 	clSetKernelArg (kernel, 2, sizeof (cl_mem), &outputImage);
-	clSetKernelArg (kernel, 3, sizeof (cl_mem), &exam);
+	clSetKernelArg (kernel, 3, sizeof (cl_mem), &SpherePos);
 	
 	// http://www.khronos.org/registry/cl/sdk/1.1/docs/man/xhtml/clCreateCommandQueue.html
 	cl_command_queue queue = clCreateCommandQueue(context, deviceIds[0], 0, &error);
