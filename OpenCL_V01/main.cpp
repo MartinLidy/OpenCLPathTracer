@@ -246,18 +246,6 @@ int main ()
 
 	std::cout << "Context created" << std::endl;
 
-	// Simple Gaussian blur filter
-	float filter [] = {
-		1, 2, 1,
-		2, 4, 2,
-		1, 2, 1
-	};
-
-	// Normalize the filter
-	for (int i = 0; i < 9; ++i) {
-		filter [i] /= 16.0f;
-	}
-
 	// Create a program from source
 	cl_program program = CreateProgram (LoadKernel ("kernels/image.cl"),
 		context);
@@ -284,36 +272,17 @@ int main ()
 	cl_kernel kernel = clCreateKernel (program, "Filter", &error);
 	CheckError (error);
 
-	// OpenCL only supports RGBA, so we need to convert here
-	const auto image = RGBtoRGBA (LoadImage ("test.ppm"));
 
-	// http://www.khronos.org/registry/cl/sdk/1.1/docs/man/xhtml/clCreateImage2D.html
 	static const cl_image_format format = { CL_RGBA, CL_UNORM_INT8 };
 
-	// Only need if we use clCreateImage instead of clCreateImage2D
-	static cl_image_desc desc;
-	desc.image_type = 0;
-	desc.image_height = image.height;
-	desc.image_width = image.width;
-	desc.image_row_pitch = 0;
-
-	//cl_mem inputImage = clCreateImage(context, CL_MEM_ALLOC_HOST_PTR | CL_MEM_COPY_HOST_PTR, &format, &desc, 0, &error);
-	cl_mem inputImage = clCreateImage2D(context, CL_MEM_READ_ONLY | CL_MEM_COPY_HOST_PTR, &format,
-		image.width, image.height, 0,
-		const_cast<char*> (image.pixel.data()),
-		&error);
-	CheckError (error);
-
+	static const int imageWidth = 512;
+	static const int imageHeight = 512;
 	//cl_mem outputImage = clCreateImage(context, CL_MEM_WRITE_ONLY, &format, &desc, 0, &error);
 	cl_mem outputImage = clCreateImage2D(context, CL_MEM_WRITE_ONLY, &format,
-		image.width, image.height, 0,
+		imageWidth, imageHeight, 0,
 		nullptr, &error);
 	CheckError(error);
-
-	// Create a buffer for the filter weights
-	// http://www.khronos.org/registry/cl/sdk/1.1/docs/man/xhtml/clCreateBuffer.html
-	cl_mem filterWeightsBuffer = clCreateBuffer (context, CL_MEM_READ_ONLY | CL_MEM_COPY_HOST_PTR, sizeof (float) * 9, filter, &error);
-	CheckError (error);
+	const auto image = RGBtoRGBA(LoadImage("test.ppm"));
 
 	//vector3d SpherePos = {0,0,0};
 	
@@ -323,8 +292,6 @@ int main ()
 	//error = clEnqueueWriteBuffer(command_queue, SpherePos, CL_TRUE, 0, sizeof(float)*4, &SpherePosValue, 0, NULL, NULL);
 
 	// Setup the kernel arguments
-	clSetKernelArg (kernel, 0, sizeof (cl_mem), &inputImage);
-	clSetKernelArg (kernel, 1, sizeof (cl_mem), &filterWeightsBuffer);
 	clSetKernelArg (kernel, 2, sizeof (cl_mem), &outputImage);
 	clSetKernelArg (kernel, 3, sizeof (cl_mem), &SpherePos);
 	
@@ -335,10 +302,11 @@ int main ()
 	// Run the processing
 	// http://www.khronos.org/registry/cl/sdk/1.1/docs/man/xhtml/clEnqueueNDRangeKernel.html
 	std::size_t offset [3] = { 0 };
-	std::size_t size [3] = { image.width, image.height, 1 };
+	std::size_t size [3] = { imageWidth, imageHeight, 1 };
 	CheckError (clEnqueueNDRangeKernel (queue, kernel, 2, offset, size, nullptr, 0, nullptr, nullptr));
 	
 	// Prepare the result image, set to black
+	
 	Image result = image;
 	std::fill (result.pixel.begin (), result.pixel.end (), 0);
 
@@ -356,8 +324,6 @@ int main ()
 
 	// Clean up
 	clReleaseMemObject (outputImage);
-	clReleaseMemObject (filterWeightsBuffer);
-	clReleaseMemObject (inputImage);
 
 	clReleaseCommandQueue (queue);
 	
