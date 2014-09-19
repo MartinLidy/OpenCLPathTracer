@@ -161,7 +161,7 @@ std::string GetDeviceName (cl_device_id id)
 
 void CheckError (cl_int error)
 {
-	std::cerr << "Check error " << error << std::endl;
+	//std::cerr << "Check error " << error << std::endl;
 
 	if (error != CL_SUCCESS) {
 		std::cerr << "OpenCL call failed with error " << error << std::endl;
@@ -264,6 +264,21 @@ int main ()
 
 	CheckError (clBuildProgram (program, deviceIdCount, deviceIds.data (), 
 		"-D FILTER_SIZE=1", nullptr, nullptr));
+
+	//if (error == CL_BUILD_PROGRAM_FAILURE) {
+		// Determine the size of the log
+		size_t log_size;
+		clGetProgramBuildInfo(program, deviceIds[0], CL_PROGRAM_BUILD_LOG, 0, NULL, &log_size);
+
+		// Allocate memory for the log
+		char *log = (char *)malloc(log_size);
+
+		// Get the log
+		clGetProgramBuildInfo(program, deviceIds[0], CL_PROGRAM_BUILD_LOG, log_size, log, NULL);
+
+		// Print the log
+		printf("%s\n", log);
+	
 
 	// http://www.khronos.org/registry/cl/sdk/1.1/docs/man/xhtml/clCreateKernel.html
 	cl_kernel kernel = clCreateKernel (program, "Filter", &error);

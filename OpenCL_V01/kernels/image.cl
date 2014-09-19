@@ -10,6 +10,29 @@ float FilterValue (__constant const float* filterWeights,
 }
 
 
+float plane1(float3 planePos, float3 rayDir, float3 rayOrigin)
+{
+	float sale = 1.0;
+	float t = dot(rayOrigin,(float3)(0.0,1.0,0.0)) / dot(rayDir,(float3)(0.0,1.0,0.0));
+	t = -1*t;
+
+	float3 hit = rayOrigin + t*rayDir;
+	if(t < 0.00001f){
+		return 0.1;
+	}else{
+
+		if (fmod(round(hit.x) + round(hit.z), 2.0f) < 1.0){
+			return 0.0;
+		}
+		else{
+			return 0.3;
+		}
+	}
+
+	return 0.1;
+}
+
+
 float sphere(float3 ray, float3 dir, float3 center, float radius)
 {
 	float3 rc = ray-center;
@@ -19,11 +42,7 @@ float sphere(float3 ray, float3 dir, float3 center, float radius)
 	float t = -b - sqrt(fabs(d));
 	float2 st = step(0.0, (float2)(fmin(t,d)));
 	
-	
-	//return mix(-1.0, t, st.s0);
-
-	return (t + 1.0) * st.s0;
-
+	return clamp(d*0.0001,0.0,1.0);//st.x;//(t + 1.0) * st.s0
 	//return 0.5f;
 }
 
@@ -38,7 +57,16 @@ __kernel void Filter (
 	float4 sum2 = *example;
     float4 sum = (float4)(0.0f);
 
-	sum = (float4)( sphere(		(float3)(pos.s0,pos.s1,1.0f), (float3)(pos.s0,pos.s1,1.0f), (float3)(0.0), 100.0f )	);
+	float3 CamOrigin = (float3)(0.0,	-150.0,	-150.0);
+	float3 ViewPlane = CamOrigin + (float3)(-0.5,-0.5,1);
+
+	float3 rayDir = (ViewPlane) - CamOrigin;
+	
+	// Floor
+	sum = (float4)( plane1( (float3)(0.0), rayDir, CamOrigin+(float3)(pos.x,pos.y,1.0f)));
+
+	// Sphere
+	sum += (float4)( sphere( CamOrigin + (float3)(pos.s0,pos.s1,1.0f),rayDir, (float3)(0.0), 2.0f )	,0,0,0);
 
     write_imagef (output, (int2)(pos.x, pos.y), sum);
 }
