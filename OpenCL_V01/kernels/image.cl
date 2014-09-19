@@ -12,7 +12,7 @@ float FilterValue (__constant const float* filterWeights,
 
 float plane1(float3 planePos, float3 rayDir, float3 rayOrigin)
 {
-	float sale = 1.0;
+	float scale = 0.01;
 	float t = dot(rayOrigin,(float3)(0.0,1.0,0.0)) / dot(rayDir,(float3)(0.0,1.0,0.0));
 	t = -1*t;
 
@@ -20,8 +20,7 @@ float plane1(float3 planePos, float3 rayDir, float3 rayOrigin)
 	if(t < 0.00001f){
 		return 0.1;
 	}else{
-
-		if (fmod(round(hit.x) + round(hit.z), 2.0f) < 1.0){
+		if (fmod(round(hit.x*scale) + round(hit.z*scale), 2.0f) < 1.0){
 			return 0.0;
 		}
 		else{
@@ -33,7 +32,7 @@ float plane1(float3 planePos, float3 rayDir, float3 rayOrigin)
 }
 
 
-float sphere(float3 ray, float3 dir, float3 center, float radius)
+float4 sphere(float3 ray, float3 dir, float3 center, float radius, float4 previous)
 {
 	float3 rc = ray-center;
 	float c = dot(rc, rc) - (radius*radius);
@@ -41,9 +40,16 @@ float sphere(float3 ray, float3 dir, float3 center, float radius)
 	float d = b*b - c;
 	float t = -b - sqrt(fabs(d));
 	float2 st = step(0.0, (float2)(fmin(t,d)));
+	float4 color = (float4)(0);
 	
-	return clamp(d*0.0001,0.0,1.0);//st.x;//(t + 1.0) * st.s0
-	//return 0.5f;
+	if(d>previous.s3){
+		color = (float4)(clamp(d*0.0001,0.0,1.0));
+		color.s3 = previous.s3;
+	}
+	else{
+		color = previous;
+	}
+	return color;
 }
 
 
@@ -58,7 +64,7 @@ __kernel void Filter (
     float4 sum = (float4)(0.0f);
 
 	float3 CamOrigin = (float3)(0.0,	-150.0,	-150.0);
-	float3 ViewPlane = CamOrigin + (float3)(-0.5,-0.5,1);
+	float3 ViewPlane = CamOrigin + (float3)(-0.5,-0.5,1.0);
 
 	float3 rayDir = (ViewPlane) - CamOrigin;
 	
@@ -66,7 +72,7 @@ __kernel void Filter (
 	sum = (float4)( plane1( (float3)(0.0), rayDir, CamOrigin+(float3)(pos.x,pos.y,1.0f)));
 
 	// Sphere
-	sum += (float4)( sphere( CamOrigin + (float3)(pos.s0,pos.s1,1.0f),rayDir, (float3)(0.0), 2.0f )	,0,0,0);
+	sum = sphere( CamOrigin + (float3)(pos.s0,pos.s1,1.0f),rayDir, (float3)(0.0), 2.0f, sum );
 
     write_imagef (output, (int2)(pos.x, pos.y), sum);
 }
