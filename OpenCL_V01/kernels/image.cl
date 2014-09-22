@@ -59,12 +59,20 @@ __kernel void Filter (
 	__write_only image2d_t output,
 	__constant float4* example)
 {
+	const int2 iResolution = {512,408};
     const int2 pos = {get_global_id(0), get_global_id(1)};
+	
+	float scx = (float)( pos.x / iResolution.x )*2.0 - 1.0;
+	float scy = (float)( pos.y / iResolution.y )*2.0 - 1.0;
+	
+	float3 screenCoords = {scx,scy,0};
+
 	float4 sum2 = *example;
     float4 sum = (float4)(0.0f);
 
+	//
 	float3 CamOrigin = (float3)(0.0,	-150.0,	-150.0);
-	float3 ViewPlane = CamOrigin + (float3)(-0.5,-0.5,1.0);
+	float3 ViewPlane = CamOrigin + (float3)(-0.5,-0.5, 1.0);
 
 	float3 rayDir = (ViewPlane) - CamOrigin;
 	
@@ -72,7 +80,7 @@ __kernel void Filter (
 	sum = (float4)( plane1( (float3)(0.0), rayDir, CamOrigin+(float3)(pos.x,pos.y,1.0f)));
 
 	// Sphere
-	sum = sphere( CamOrigin + (float3)(pos.s0,pos.s1,1.0f),rayDir, (float3)(0.0), 2.0f, sum );
+	//sum = sphere( CamOrigin + (float3)(pos.s0,pos.s1,1.0f),rayDir, (float3)(0.0), 2.0f, sum );
 
     write_imagef (output, (int2)(pos.x, pos.y), sum);
 }
