@@ -26,3 +26,10 @@
 *.exe
 *.out
 *.app
+
+# Visual Studio files
+Debug/*
+OpenCL_V01/Debug/*
+*.sdf
+*.sln
+*.vcxproj
