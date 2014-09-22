@@ -31,5 +31,6 @@
 Debug/*
 OpenCL_V01/Debug/*
 *.sdf
+*.suo
 *.sln
 *.vcxproj
