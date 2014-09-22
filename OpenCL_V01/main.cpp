@@ -194,7 +194,8 @@ cl_program CreateProgram (const std::string& source,
 
 int main ()
 {
-	// http://www.khronos.org/registry/cl/sdk/1.1/docs/man/xhtml/clGetPlatformIDs.html
+	
+	/* Initalize Platform IDs */ 
 	cl_uint platformIdCount = 0;
 	clGetPlatformIDs (0, nullptr, &platformIdCount);
 
@@ -212,7 +213,7 @@ int main ()
 		std::cout << "\t (" << (i+1) << ") : " << GetPlatformName (platformIds [i]) << std::endl;
 	}
 
-	// http://www.khronos.org/registry/cl/sdk/1.1/docs/man/xhtml/clGetDeviceIDs.html
+	/* Initalize Device IDs */
 	cl_uint deviceIdCount = 0;
 	clGetDeviceIDs (platformIds [0], CL_DEVICE_TYPE_ALL, 0, nullptr,
 		&deviceIdCount);
@@ -232,6 +233,7 @@ int main ()
 		std::cout << "\t (" << (i+1) << ") : " << GetDeviceName (deviceIds [i]) << std::endl;
 	}
 
+
 	// http://www.khronos.org/registry/cl/sdk/1.1/docs/man/xhtml/clCreateContext.html
 	const cl_context_properties contextProperties [] =
 	{
@@ -246,6 +248,7 @@ int main ()
 
 	std::cout << "Context created" << std::endl;
 
+
 	// Create a program from source
 	cl_program program = CreateProgram (LoadKernel ("kernels/image.cl"),
 		context);
@@ -253,47 +256,37 @@ int main ()
 	CheckError (clBuildProgram (program, deviceIdCount, deviceIds.data (), 
 		"-D FILTER_SIZE=1", nullptr, nullptr));
 
-	//if (error == CL_BUILD_PROGRAM_FAILURE) {
-		// Determine the size of the log
-		size_t log_size;
-		clGetProgramBuildInfo(program, deviceIds[0], CL_PROGRAM_BUILD_LOG, 0, NULL, &log_size);
+	/* Send log to CMD window */
+	size_t log_size;
+	clGetProgramBuildInfo(program, deviceIds[0], CL_PROGRAM_BUILD_LOG, 0, NULL, &log_size);
+	char *log = (char *)malloc(log_size);
 
-		// Allocate memory for the log
-		char *log = (char *)malloc(log_size);
-
-		// Get the log
-		clGetProgramBuildInfo(program, deviceIds[0], CL_PROGRAM_BUILD_LOG, log_size, log, NULL);
-
-		// Print the log
-		printf("%s\n", log);
+	clGetProgramBuildInfo(program, deviceIds[0], CL_PROGRAM_BUILD_LOG, log_size, log, NULL);
+	printf("%s\n", log);
 	
 
-	// http://www.khronos.org/registry/cl/sdk/1.1/docs/man/xhtml/clCreateKernel.html
+	/* Create the Kernel */
 	cl_kernel kernel = clCreateKernel (program, "Filter", &error);
 	CheckError (error);
 
-
+	// Image info
 	static const cl_image_format format = { CL_RGBA, CL_UNORM_INT8 };
-
 	static const int imageWidth = 512;
 	static const int imageHeight = 512;
-	//cl_mem outputImage = clCreateImage(context, CL_MEM_WRITE_ONLY, &format, &desc, 0, &error);
+
 	cl_mem outputImage = clCreateImage2D(context, CL_MEM_WRITE_ONLY, &format,
 		imageWidth, imageHeight, 0,
 		nullptr, &error);
 	CheckError(error);
 	const auto image = RGBtoRGBA(LoadImage("test.ppm"));
-
-	//vector3d SpherePos = {0,0,0};
 	
 	// 
 	float SpherePosValue[] = { 0.4f, 1.0, 0.0, 0 };
 	cl_mem SpherePos = clCreateBuffer(context, CL_MEM_READ_ONLY | CL_MEM_COPY_HOST_PTR, sizeof(float)*4, &SpherePosValue, &error);
-	//error = clEnqueueWriteBuffer(command_queue, SpherePos, CL_TRUE, 0, sizeof(float)*4, &SpherePosValue, 0, NULL, NULL);
 
 	// Setup the kernel arguments
-	clSetKernelArg (kernel, 2, sizeof (cl_mem), &outputImage);
-	clSetKernelArg (kernel, 3, sizeof (cl_mem), &SpherePos);
+	clSetKernelArg (kernel, 0, sizeof (cl_mem), &outputImage);
+	clSetKernelArg (kernel, 1, sizeof (cl_mem), &SpherePos);
 	
 	// http://www.khronos.org/registry/cl/sdk/1.1/docs/man/xhtml/clCreateCommandQueue.html
 	cl_command_queue queue = clCreateCommandQueue(context, deviceIds[0], 0, &error);
@@ -306,7 +299,6 @@ int main ()
 	CheckError (clEnqueueNDRangeKernel (queue, kernel, 2, offset, size, nullptr, 0, nullptr, nullptr));
 	
 	// Prepare the result image, set to black
-	
 	Image result = image;
 	std::fill (result.pixel.begin (), result.pixel.end (), 0);
 
@@ -324,7 +316,6 @@ int main ()
 
 	// Clean up
 	clReleaseMemObject (outputImage);
-
 	clReleaseCommandQueue (queue);
 	
 	clReleaseKernel (kernel);
