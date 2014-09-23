@@ -26,6 +26,34 @@ float plane1(float3 planePos, float3 rayDir, float3 rayOrigin)
 	return 0.1;
 }
 
+bool triangle(float3 v0, float3 v1, float3 v2, float3 ro, float3 rd, float3 *hit, float *dist)
+{
+    float3 edge1 = v1 - v0;
+    float3 edge2 = v2 - v0;
+    float3 pvec = cross(rd, edge2);
+    float det = dot(edge1, pvec);
+
+    if (det == 0) return false;
+    
+    float invDet = 1 / det;
+    
+    float3 tvec = ro - v0;
+    
+    float u = dot(tvec, pvec) * invDet;
+    
+    if (u < 0 || u > 1) return false;
+    
+    float3 qvec = cross(tvec, edge1);
+    
+    float v = dot(rd, qvec) * invDet;
+    
+    if (v < 0 || u + v > 1) return false;
+    
+    *dist = dot(edge2, qvec) * invDet;
+    *hit  = ro + rd * (*dist);
+
+    return true;
+}
 
 float4 sphere(float3 ray, float3 dir, float3 center, float radius, float4 previous)
 {

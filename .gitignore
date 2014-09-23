@@ -33,4 +33,10 @@ OpenCL_V01/Debug/*
 *.sdf
 *.suo
 *.sln
+*.ppm
+*.opensdf
 *.vcxproj
+*.user
+*.filters
+*.hgignore
+*.hgtags
