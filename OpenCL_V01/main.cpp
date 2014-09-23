@@ -223,7 +223,7 @@ float * parseObj(){
 			printVector(objData->vertexList[o->vertex_index[j]]);
 
 			for (int k = 0; k < 3; k++){
-				output[i - j] = objData->vertexList[o->vertex_index[j]]->e[k];
+				output[3*j + k] = objData->vertexList[o->vertex_index[j]]->e[k];
 			}
 		}
 
