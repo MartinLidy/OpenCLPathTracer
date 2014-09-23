@@ -1,11 +1,11 @@
-﻿Build started 9/23/2014 3:51:11 PM.
+﻿Build started 9/23/2014 4:00:06 PM.
      1>Project "C:\Users\Martin\Documents\Visual Studio 2013\Projects\OpenCLPathTracer\OpenCL_V01\OpenCL_V01.vcxproj" on node 2 (Build target(s)).
      1>ClCompile:
          C:\Program Files (x86)\Microsoft Visual Studio 12.0\VC\bin\CL.exe /c /I"C:\Program Files (x86)\Intel\OpenCL SDK\4.6\include\CL" /ZI /nologo /W3 /WX- /sdl- /Od /Oy- /D WIN32 /D _DEBUG /D _CONSOLE /D _LIB /D _UNICODE /D UNICODE /Gm /EHsc /RTC1 /MDd /GS /fp:precise /Zc:wchar_t /Zc:forScope /Fo"Debug\\" /Fd"Debug\vc120.pdb" /Gd /TP /analyze- /errorReport:prompt main.cpp
          main.cpp
-     1>c:\users\martin\documents\visual studio 2013\projects\openclpathtracer\opencl_v01\main.cpp(279): warning C4996: 'clCreateImage2D': was declared deprecated
+     1>c:\users\martin\documents\visual studio 2013\projects\openclpathtracer\opencl_v01\main.cpp(276): warning C4996: 'clCreateImage2D': was declared deprecated
                  c:\users\martin\documents\visual studio 2013\projects\openclpathtracer\opencl_v01\cl\cl.h(1314) : see declaration of 'clCreateImage2D'
-     1>c:\users\martin\documents\visual studio 2013\projects\openclpathtracer\opencl_v01\main.cpp(292): warning C4996: 'clCreateCommandQueue': was declared deprecated
+     1>c:\users\martin\documents\visual studio 2013\projects\openclpathtracer\opencl_v01\main.cpp(289): warning C4996: 'clCreateCommandQueue': was declared deprecated
                  c:\users\martin\documents\visual studio 2013\projects\openclpathtracer\opencl_v01\cl\cl.h(1355) : see declaration of 'clCreateCommandQueue'
        Link:
          C:\Program Files (x86)\Microsoft Visual Studio 12.0\VC\bin\link.exe /ERRORREPORT:PROMPT /OUT:"C:\Users\Martin\Documents\Visual Studio 2013\Projects\OpenCLPathTracer\Debug\OpenCL_V01.exe" /INCREMENTAL /NOLOGO /LIBPATH:"C:\Program Files (x86)\Intel\OpenCL SDK\4.6\lib\x86" OpenCL.lib kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib /MANIFEST /MANIFESTUAC:"level='asInvoker' uiAccess='false'" /manifest:embed /DEBUG /PDB:"C:\Users\Martin\Documents\Visual Studio 2013\Projects\OpenCLPathTracer\Debug\OpenCL_V01.pdb" /SUBSYSTEM:CONSOLE /TLBID:1 /DYNAMICBASE /NXCOMPAT /IMPLIB:"C:\Users\Martin\Documents\Visual Studio 2013\Projects\OpenCLPathTracer\Debug\OpenCL_V01.lib" /MACHINE:X86 Debug\main.obj
@@ -16,4 +16,4 @@
 
 Build succeeded.
 
-Time Elapsed 00:00:02.74
+Time Elapsed 00:00:04.52

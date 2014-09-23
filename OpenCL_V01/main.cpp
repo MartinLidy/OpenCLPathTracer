@@ -161,11 +161,8 @@ std::string GetDeviceName (cl_device_id id)
 
 void CheckError (cl_int error)
 {
-	//std::cerr << "Check error " << error << std::endl;
-
 	if (error != CL_SUCCESS) {
 		std::cerr << "OpenCL call failed with error " << error << std::endl;
-		//std::exit (1);
 	}
 }
 
@@ -193,8 +190,7 @@ cl_program CreateProgram (const std::string& source,
 }
 
 int main ()
-{
-	
+{	
 	/* Initalize Platform IDs */ 
 	cl_uint platformIdCount = 0;
 	clGetPlatformIDs (0, nullptr, &platformIdCount);
