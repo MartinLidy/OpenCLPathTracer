@@ -34,6 +34,7 @@ OpenCL_V01/Debug/*
 *.suo
 *.sln
 *.ppm
+*.opensdf
 *.vcxproj
 *.user
 *.filters
