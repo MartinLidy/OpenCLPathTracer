@@ -81,7 +81,11 @@ float4 sphere(float3 ray, float3 dir, float3 center, float radius, float4 previo
 }*/
 
 
-__kernel void Filter ( __write_only image2d_t output, __constant float4* example)
+__kernel void Filter ( 
+	__write_only image2d_t output, 
+	__constant float4* example,
+	__constant float* verts,
+	__constant int* faces)
 {
 	const int2 iResolution = {512,512};
     const int2 pos = {get_global_id(0), get_global_id(1)};

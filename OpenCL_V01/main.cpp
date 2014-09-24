@@ -200,170 +200,58 @@ cl_program CreateProgram (const std::string& source,
 	return program;
 }
 
-float * parseObj(){
-	objLoader *objData = new objLoader();
-	objData->load("test.obj");
+float *VertsToFloat3(obj_vector** verts, int vertCount){
+	int arraySize = vertCount * 3;
+	float *output = (float*)malloc(arraySize * sizeof(float));
 
-	// 
-	const int vertAmount = objData->vertexCount;
-	float output[12 * 3 * 3] = {};
+	// Each vert
+	for (int i = 0; i < vertCount; i++){
 
-	printf("Number of vertices: %i\n", objData->vertexCount);
-	printf("Number of vertex normals: %i\n", objData->normalCount);
-	printf("Number of texture coordinates: %i\n", objData->textureCount);
-	printf("\n");
-
-	printf("Number of faces: %i\n", objData->faceCount);
-	for (int i = 0; i<objData->faceCount; i++)
-	{
-		obj_face *o = objData->faceList[i];
-		printf(" face ");
-		for (int j = 0; j<3; j++)
-		{
-			printVector(objData->vertexList[o->vertex_index[j]]);
-
-			for (int k = 0; k < 3; k++){
-				output[3*j + k] = objData->vertexList[o->vertex_index[j]]->e[k];
-			}
-		}
-
-		printf("\n");
-	}
-
-	printf("\n");
-
-	printf("Number of spheres: %i\n", objData->sphereCount);
-	for (int i = 0; i<objData->sphereCount; i++)
-	{
-		obj_sphere *o = objData->sphereList[i];
-		printf(" sphere ");
-		printVector(objData->vertexList[o->pos_index]);
-		printVector(objData->normalList[o->up_normal_index]);
-		printVector(objData->normalList[o->equator_normal_index]);
-		printf("\n");
-	}
-
-	printf("\n");
-
-	printf("Number of planes: %i\n", objData->planeCount);
-	for (int i = 0; i<objData->planeCount; i++)
-	{
-		obj_plane *o = objData->planeList[i];
-		printf(" plane ");
-		printVector(objData->vertexList[o->pos_index]);
-		printVector(objData->normalList[o->normal_index]);
-		printVector(objData->normalList[o->rotation_normal_index]);
-		printf("\n");
-	}
-
-	printf("\n");
-
-	printf("Number of point lights: %i\n", objData->lightPointCount);
-	for (int i = 0; i<objData->lightPointCount; i++)
-	{
-		obj_light_point *o = objData->lightPointList[i];
-		printf(" plight ");
-		printVector(objData->vertexList[o->pos_index]);
-		printf("\n");
-	}
-
-	printf("\n");
-
-	printf("Number of disc lights: %i\n", objData->lightDiscCount);
-	for (int i = 0; i<objData->lightDiscCount; i++)
-	{
-		obj_light_disc *o = objData->lightDiscList[i];
-		printf(" dlight ");
-		printVector(objData->vertexList[o->pos_index]);
-		printVector(objData->normalList[o->normal_index]);
-		printf("\n");
-	}
-
-	printf("\n");
-
-	printf("Number of quad lights: %i\n", objData->lightQuadCount);
-	for (int i = 0; i<objData->lightQuadCount; i++)
-	{
-		obj_light_quad *o = objData->lightQuadList[i];
-		printf(" qlight ");
-		printVector(objData->vertexList[o->vertex_index[0]]);
-		printVector(objData->vertexList[o->vertex_index[1]]);
-		printVector(objData->vertexList[o->vertex_index[2]]);
-		printVector(objData->vertexList[o->vertex_index[3]]);
-		printf("\n");
-	}
-
-	printf("\n");
-
-	if (objData->camera != NULL)
-	{
-		printf("Found a camera\n");
-		printf(" position: ");
-		printVector(objData->vertexList[objData->camera->camera_pos_index]);
-		printf("\n looking at: ");
-		printVector(objData->vertexList[objData->camera->camera_look_point_index]);
-		printf("\n up normal: ");
-		printVector(objData->normalList[objData->camera->camera_up_norm_index]);
-		printf("\n");
-	}
-
-	printf("\n");
-
-	printf("Number of materials: %i\n", objData->materialCount);
-	for (int i = 0; i<objData->materialCount; i++)
-	{
-		obj_material *mtl = objData->materialList[i];
-		printf(" name: %s", mtl->name);
-		printf(" amb: %.2f ", mtl->amb[0]);
-		printf("%.2f ", mtl->amb[1]);
-		printf("%.2f\n", mtl->amb[2]);
-
-		printf(" diff: %.2f ", mtl->diff[0]);
-		printf("%.2f ", mtl->diff[1]);
-		printf("%.2f\n", mtl->diff[2]);
-
-		printf(" spec: %.2f ", mtl->spec[0]);
-		printf("%.2f ", mtl->spec[1]);
-		printf("%.2f\n", mtl->spec[2]);
-
-		printf(" reflect: %.2f\n", mtl->reflect);
-		printf(" trans: %.2f\n", mtl->trans);
-		printf(" glossy: %i\n", mtl->glossy);
-		printf(" shiny: %i\n", mtl->shiny);
-		printf(" refact: %.2f\n", mtl->refract_index);
-
-		printf(" texture: %s\n", mtl->texture_filename);
-		printf("\n");
-	}
-
-	printf("\n");
-
-	//vertex, normal, and texture test
-	if (objData->textureCount > 2 && objData->normalCount > 2 && objData->faceCount > 2)
-	{
-		printf("Detailed face data:\n");
-
-		for (int i = 0; i<3; i++)
-		{
-			obj_face *o = objData->faceList[i];
-			printf(" face ");
-			for (int j = 0; j<3; j++)
-			{
-				printf("%i/", o->vertex_index[j]);
-				printf("%i/", o->texture_index[j]);
-				printf("%i ", o->normal_index[j]);
-			}
-			printf("\n");
+		// Each coord
+		for (int k = 0; k < 3; k++){
+			output[i * 3 + k] = verts[i]->e[k];
 		}
 	}
 
 	return output;
 }
 
+int *FacesToVerts(obj_face** faces, int faceCount){
+	int arraySize = faceCount * 3;
+	int *output = (int*)malloc(arraySize * sizeof(int));
+	
+	// Each face
+	for (int i = 0; i < faceCount; i++){
+
+		// Each vert
+		for (int k = 0; k < 3; k++){
+			output[i * 3 + k] = *faces[i]->vertex_index;
+		}
+	}
+
+	return output;
+}
+
+objLoader * parseObj(){
+	objLoader *objData = new objLoader();
+	objData->load("test.obj");
+
+	// 
+	const int faceAmount = objData->faceCount;
+
+
+	printf("Number of vertices: %i\n", objData->vertexCount);
+	printf("Number of vertex normals: %i\n", objData->normalCount);
+	printf("Number of texture coordinates: %i\n", objData->textureCount);
+	printf("\n");
+	
+	printf("Number of faces: %i\n", objData->faceCount);
+
+	return objData;
+}
+
 int main ()
 {
-	parseObj();
-
 	/* Initalize Platform IDs */ 
 	cl_uint platformIdCount = 0;
 	clGetPlatformIDs (0, nullptr, &platformIdCount);
@@ -453,14 +341,29 @@ int main ()
 	float SpherePosValue[] = { 0.4f, 1.0, 0.0, 0 };
 	cl_mem SpherePos = clCreateBuffer(context, CL_MEM_READ_ONLY | CL_MEM_COPY_HOST_PTR, sizeof(float)* 4, &SpherePosValue, &error);
 
-	// obj parser
-	//float objectDataValue[] = parseObj();
-	//cl_mem objectData = clCreateBuffer(context, CL_MEM_READ_ONLY | CL_MEM_COPY_HOST_PTR, sizeof(float)* 12, &objectDataValue, &error);
+
+	/* PARSING OBJECTS BITCHES */
+	objLoader* loadedObject = parseObj();
+
+	// export verts
+	float* vertArray = VertsToFloat3(loadedObject->vertexList, loadedObject->vertexCount);
+
+	// export faces
+	int* faceArray = FacesToVerts(loadedObject->faceList, loadedObject->faceCount);
+
+	// create buffers
+	cl_mem faceData = clCreateBuffer(context, CL_MEM_READ_ONLY | CL_MEM_COPY_HOST_PTR, sizeof(int)*loadedObject->faceCount, &faceArray, &error);
+	cl_mem vertData = clCreateBuffer(context, CL_MEM_READ_ONLY | CL_MEM_COPY_HOST_PTR, sizeof(float)*loadedObject->vertexCount * 3, &vertArray, &error);
+
+	// Free MALLOC when finished
+	free(vertArray);
+	free(faceArray);
 
 	// Setup the kernel arguments
 	clSetKernelArg (kernel, 0, sizeof (cl_mem), &outputImage);
 	clSetKernelArg (kernel, 1, sizeof (cl_mem), &SpherePos);
-	//clSetKernelArg(kernel, 2, sizeof (cl_mem), &objectData);
+	clSetKernelArg(kernel, 2, sizeof (cl_mem), &vertData);
+	clSetKernelArg(kernel, 3, sizeof (cl_mem), &faceData);
 	
 	// http://www.khronos.org/registry/cl/sdk/1.1/docs/man/xhtml/clCreateCommandQueue.html
 	cl_command_queue queue = clCreateCommandQueue(context, deviceIds[0], 0, &error);
@@ -485,6 +388,7 @@ int main ()
 
 	// Save and finish up
 	SaveImage (RGBAtoRGB (result), "output.ppm");
+
 	std::cout << "Finished.  Press any key to continue" << std::endl;
 	std::getchar();
 
@@ -494,6 +398,5 @@ int main ()
 	
 	clReleaseKernel (kernel);
 	clReleaseProgram (program);
-
 	clReleaseContext (context);
 }
