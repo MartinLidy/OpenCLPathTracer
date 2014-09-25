@@ -352,18 +352,20 @@ int main ()
 	int* faceArray = FacesToVerts(loadedObject->faceList, loadedObject->faceCount);
 
 	// create buffers
-	cl_mem faceData = clCreateBuffer(context, CL_MEM_READ_ONLY | CL_MEM_COPY_HOST_PTR, sizeof(int)*loadedObject->faceCount, &faceArray, &error);
-	cl_mem vertData = clCreateBuffer(context, CL_MEM_READ_ONLY | CL_MEM_COPY_HOST_PTR, sizeof(float)*loadedObject->vertexCount * 3, &vertArray, &error);
+	cl_mem faceData = clCreateBuffer(context, CL_MEM_READ_ONLY | CL_MEM_COPY_HOST_PTR, sizeof(int)*loadedObject->faceCount * 3, faceArray, &error);
+	cl_mem vertData = clCreateBuffer(context, CL_MEM_READ_ONLY | CL_MEM_COPY_HOST_PTR, sizeof(float)*loadedObject->vertexCount * 3, vertArray, &error);
+	cl_mem faceCount = clCreateBuffer(context, CL_MEM_READ_ONLY | CL_MEM_COPY_HOST_PTR, sizeof(int), &loadedObject->faceCount, &error);
 
 	// Free MALLOC when finished
-	free(vertArray);
-	free(faceArray);
+	//free(vertArray);
+	//free(faceArray);
 
 	// Setup the kernel arguments
 	clSetKernelArg (kernel, 0, sizeof (cl_mem), &outputImage);
 	clSetKernelArg (kernel, 1, sizeof (cl_mem), &SpherePos);
 	clSetKernelArg(kernel, 2, sizeof (cl_mem), &vertData);
 	clSetKernelArg(kernel, 3, sizeof (cl_mem), &faceData);
+	clSetKernelArg(kernel, 4, sizeof (cl_mem), &faceCount);
 	
 	// http://www.khronos.org/registry/cl/sdk/1.1/docs/man/xhtml/clCreateCommandQueue.html
 	cl_command_queue queue = clCreateCommandQueue(context, deviceIds[0], 0, &error);
