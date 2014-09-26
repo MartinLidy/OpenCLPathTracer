@@ -29,47 +29,24 @@ float plane1(float3 planePos, float3 rayDir, float3 rayOrigin, float depth)
 	return 0;
 }
 
-float triangle(float3 v0, float3 v1, float3 v2, float3 ro, float3 rd)//, float3 *hit, float *dist)
+bool triangle(float3 v0, float3 v1, float3 v2, float3 ro, float3 rd, float3 *hit, float *dist)
 {
-	float3 position = (float3)(0.0, 0.0, 500.0);
-	float output1 = 1.0;
-	float scale = 0.01;
-
-	v0 = position + v0*scale;
-	v1 = position + v1*scale;
-	v2 = position + v2*scale;
-
     float3 edge1 = v1 - v0;
     float3 edge2 = v2 - v0;
-
     float3 pvec = cross(rd, edge2).xyz;
     float det = dot(edge1, pvec);
-	
-    if (det < 0.0){
-		output1 = 0.0;
-	}
-    
+    if (det < 0.0) return false;
     float invDet = 1.0 / det;
-    
-	// ------------
     float3 tvec = ro - v0;
     float u = dot(tvec, pvec) * invDet;
-    
-	if (u < 0 || u > 1) output1=0.0;
-    
-	// ------------
+	if (u < 0 || u > 1) return false;
     float3 qvec = cross(tvec, edge1);
     float v = dot(rd, qvec) * invDet;
-    
-    if (v < 0 || u + v > 1) output1=0.0;
+    if (v < 0 || u + v > 1) return false;
 	
-	//
-    float dist = dot(edge2, qvec) * invDet;
-    float3 hit  = ro + rd * (dist);
-
-	//printf("distance = %f\n", dist);
-	//printf("v0 = %2.2v3hlf,  v1 = %2.2v3hlf,  V0-V1 = %2.2v3hlf\n", v0,v1,v2);
-    return output1;
+	*dist = dot(edge2, qvec) * invDet;
+    *hit  = ro + rd * (*dist);
+    return true;
 }
 
 float4 sphere(float3 ray, float3 dir, float3 center, float radius, float4 previous)
@@ -149,16 +126,30 @@ __kernel void Filter (
 		// Uniform Sample
 		rx = samples/2 - i;
 		ry = samples/2 - i;
-		
+
+		bool hitCube = false;
+		float minDist = 10000000;
+		float3 minHit = (float3)(0.0, 0.0, 0.0);
 		for(k=0; k<*faceCount; k++){
 			v1 = (float3)( verts[faces[3*k]],	verts[faces[3*k]+1],	verts[faces[3*k]+2]   );
 			v2 = (float3)( verts[faces[3*k+1]],	verts[faces[3*k+1]+1],	verts[faces[3*k+1]+2] );
 			v3 = (float3)( verts[faces[3*k+2]],	verts[faces[3*k+2]+1],	verts[faces[3*k+2]+2] );
-
-			sum += (float4)( triangle(v1, v2, v3, rayOrigin, rayDir));
+			float3 hit;
+			float dist;
+			if(triangle(v1, v2, v3, rayOrigin, rayDir, &hit, &dist)){ 
+				if(dist < minDist){ 
+					minDist = dist;
+					minHit = hit;
+				}
+				hitCube = true;
+			}
 		}
-
-		sum += (float4)( plane1( (float3)(0.0), rayDir,  rayOrigin, sum.x));
+		if(hitCube){ 
+			sum += (float4)(0.5,0.5,0.5,1);
+		}
+		else{ 
+			sum += (float4)( plane1( (float3)(0.0), rayDir,  rayOrigin, sum.x));
+		}
 	}
 	
 	sum = sum/samples;
