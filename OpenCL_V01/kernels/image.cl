@@ -4,7 +4,7 @@ __constant sampler_t sampler =
 | CLK_FILTER_NEAREST;
 
 
-float plane1(float3 planePos, float3 rayDir, float3 rayOrigin)
+float plane1(float3 planePos, float3 rayDir, float3 rayOrigin, float depth)
 {
 	float scale = 0.01;
 	float t = dot(rayOrigin,(float3)(0.0,1.0,0.0)) / dot(rayDir,(float3)(0.0,1.0,0.0));
@@ -12,25 +12,28 @@ float plane1(float3 planePos, float3 rayDir, float3 rayOrigin)
 
 	float3 hit = rayOrigin + t*rayDir;
 	
-	if(t < 0.00001f){
-		return 0.1;
-	}else{
-		if (fmod(round(fabs(hit.x)*scale) + round(fabs(hit.z)*scale), 2.0f) < 1.0){
-			return 0.0;
+	if(depth < 0.01){
+		if(t < 0.00001f){
+			return 0.1;
+		}else{
+			if (fmod(round(fabs(hit.x)*scale) + round(fabs(hit.z)*scale), 2.0f) < 1.0){
+				return 0.0;
+			}
+			else{
+				return 1.0 - (hit.x*0.001);
+			}
 		}
-		else{
-			return 1.0 - (hit.x*0.001);
-		}
-	}
 
-	return 0.1;
+		return 0.1;
+	}
+	return 0;
 }
 
 float triangle(float3 v0, float3 v1, float3 v2, float3 ro, float3 rd)//, float3 *hit, float *dist)
 {
-	float3 position = (float3)(0.0, 0.0, 0.0);
+	float3 position = (float3)(0.0, 0.0, 500.0);
 	float output1 = 1.0;
-	float scale = 1.0;
+	float scale = 0.01;
 
 	v0 = position + v0*scale;
 	v1 = position + v1*scale;
@@ -64,8 +67,8 @@ float triangle(float3 v0, float3 v1, float3 v2, float3 ro, float3 rd)//, float3 
     float dist = dot(edge2, qvec) * invDet;
     float3 hit  = ro + rd * (dist);
 
-	printf("distance = %f\n", dist);
-	printf("v0 = %2.2v3hlf,  v1 = %2.2v3hlf,  V0-V1 = %2.2v3hlf\n", v0,v1,v0-v1);
+	//printf("distance = %f\n", dist);
+	//printf("v0 = %2.2v3hlf,  v1 = %2.2v3hlf,  V0-V1 = %2.2v3hlf\n", v0,v1,v2);
     return output1;
 }
 
@@ -106,7 +109,9 @@ __kernel void Filter (
     const int2 pos = {get_global_id(0), get_global_id(1)};
 
 	//Geometry
-	float3 v1,v2,v3;
+	float3 v1;
+	float3 v2;
+	float3 v3;
 	
 	// MSAA
 	int i = 0;
@@ -145,15 +150,15 @@ __kernel void Filter (
 		rx = samples/2 - i;
 		ry = samples/2 - i;
 		
-		sum += (float4)( plane1( (float3)(0.0), rayDir,  rayOrigin));
-
-		for(k=0;k<*faceCount;k++){
+		for(k=0; k<*faceCount; k++){
 			v1 = (float3)( verts[faces[3*k]],	verts[faces[3*k]+1],	verts[faces[3*k]+2]   );
 			v2 = (float3)( verts[faces[3*k+1]],	verts[faces[3*k+1]+1],	verts[faces[3*k+1]+2] );
 			v3 = (float3)( verts[faces[3*k+2]],	verts[faces[3*k+2]+1],	verts[faces[3*k+2]+2] );
 
 			sum += (float4)( triangle(v1, v2, v3, rayOrigin, rayDir));
 		}
+
+		sum += (float4)( plane1( (float3)(0.0), rayDir,  rayOrigin, sum.x));
 	}
 	
 	sum = sum/samples;

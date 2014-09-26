@@ -210,6 +210,7 @@ float *VertsToFloat3(obj_vector** verts, int vertCount){
 		// Each coord
 		for (int k = 0; k < 3; k++){
 			output[i * 3 + k] = verts[i]->e[k];
+			//printf("%f", output[i * 3 + k]);
 		}
 	}
 
@@ -225,7 +226,7 @@ int *FacesToVerts(obj_face** faces, int faceCount){
 
 		// Each vert
 		for (int k = 0; k < 3; k++){
-			output[i * 3 + k] = *faces[i]->vertex_index;
+			output[i * 3 + k] = faces[i]->vertex_index[k];
 		}
 	}
 
