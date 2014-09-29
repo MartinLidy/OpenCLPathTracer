@@ -85,11 +85,11 @@ __kernel void Filter (
 	float AA_amount = 0.05;
 
 	// Screen info
-	float scx = (float)( pos.x / iResolution.x )*2.0 - 1.0;
-	float scy = (float)( pos.y / iResolution.y )*2.0 - 1.0;
+	float scx = ( (float)pos.x / iResolution.x )*2.0 - 1.0;
+	float scy = ( (float)pos.y / iResolution.y )*-2.0 + 1.0;
 
-	float3 screenCoords = {pos.x, pos.y, 0 };
-	//float3 screenCoords = {scx,scy,0};
+	//float3 screenCoords = {pos.x, pos.y, 0 };
+	float3 screenCoords = {scx,scy,0};
     float4 sum = (float4)(0.0f);
 
 	//
@@ -99,22 +99,15 @@ __kernel void Filter (
 	//float3 rayDir = (ViewPlane+(float3)(pos.x,pos.y,0)) - CamOrigin;
 	//float3 rayOrigin = ViewPlane+(float3)(rx*AA_amount,ry*AA_amount,0);
 
-	/*
-		up
-		forward
-		right=cross(forward, up)
-		up = corss(right, forward)
-		ro = pos - norm()forward
-		px = 0.5*right + 0.5* up
-		rd = px - ro
+	float3 camPos = (float3)(0.0,-20.0,1.0);
+	float3 forward = normalize((float3)(0.0,1.0,0.0));
+	float3 up      = normalize((float3)(0.0,0.0,1.0));
 
-	*/
-	float3 camPos = (float3)(-8.0,-85.0,95.0);
-	float3 up = (float3)(0.0,0.0,1.0);
-	float3 forward = (float3)(0.0,1.0,0.0);
-	float3 right = cross(forward, up);
-	float3 rayOrigin = camPos - normalize(forward);
-	float3 rayDir = screenCoords - rayOrigin;
+	float3 right = normalize(cross(forward, up));
+	up = normalize(cross(right, forward));
+	float3 rayOrigin = camPos - forward;
+	float3 rayDir = normalize(scx*right + scy*up + forward);
+	//printf("%f, %f\n", scx, scy);
 	//
 	float3 hit;
 	float dist;
@@ -151,16 +144,15 @@ __kernel void Filter (
 		}
 		if(hitCube){ 
 			sum = (float4)(0.0,0.1,0.7,1.0);
-			//sum += (float4)(0.5,0.5,0.5,1);
 		}
-		else if(plane( (float3)(0.0), (float3)(0.0,1.0,0.0), rayOrigin, rayDir, &hit, &dist) )
+		else if(plane( (float3)(0.0), normalize((float3)(0.0,0.0,1.0)), rayOrigin, rayDir, &hit, &dist) )
 		{
 			float scale = 0.1;
-			//printf("%f, %f, %f\n", hit.x, hit.y, hit.z);
 			//do this calculation for all x, y, z, and it will work regardless of normal
+			
 			if ( fmod( round( fabs(hit.x)*scale) + round(fabs(hit.y)*scale) + round(fabs(hit.z)*scale), 2.0f) < 1.0){
 				sum = (float4)(1.0,1.0,1.0,1.0);
-			}
+			}	
 			else{
 				sum = (float4)(1.0,0.0,0.0,1.0);
 			}
