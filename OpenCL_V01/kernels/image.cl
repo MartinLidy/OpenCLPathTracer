@@ -31,9 +31,9 @@ float plane1(float3 planePos, float3 rayDir, float3 rayOrigin, float depth)
 
 float triangle(float3 v0, float3 v1, float3 v2, float3 ro, float3 rd)//, float3 *hit, float *dist)
 {
-	float3 position = (float3)(0.0, 0.0, 500.0);
+	float3 position = (float3)(5000.0, 0.0, -500000.0);
 	float output1 = 1.0;
-	float scale = 0.01;
+	float scale = 0.1;
 
 	v0 = position + v0*scale;
 	v1 = position + v1*scale;
@@ -45,9 +45,7 @@ float triangle(float3 v0, float3 v1, float3 v2, float3 ro, float3 rd)//, float3 
     float3 pvec = cross(rd, edge2).xyz;
     float det = dot(edge1, pvec);
 	
-    if (det < 0.0){
-		output1 = 0.0;
-	}
+    if (det < 0.0) output1 = 0.0;
     
     float invDet = 1.0 / det;
     
@@ -158,7 +156,7 @@ __kernel void Filter (
 			sum += (float4)( triangle(v1, v2, v3, rayOrigin, rayDir));
 		}
 
-		sum += (float4)( plane1( (float3)(0.0), rayDir,  rayOrigin, sum.x));
+		//sum += (float4)( plane1( (float3)(0.0), rayDir,  rayOrigin, sum.x));
 	}
 	
 	sum = sum/samples;
