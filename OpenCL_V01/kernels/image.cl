@@ -4,70 +4,35 @@ __constant sampler_t sampler =
 | CLK_FILTER_NEAREST;
 
 
-float plane1(float3 planePos, float3 rayDir, float3 rayOrigin, float depth)
+bool plane(float3 pos, float3 norm, float3 ro, float3 rd, float3 *hit, float *dist)
 {
-	float scale = 0.01;
-	float t = dot(rayOrigin,(float3)(0.0,1.0,0.0)) / dot(rayDir,(float3)(0.0,1.0,0.0));
-	t = -1*t;
-
-	float3 hit = rayOrigin + t*rayDir;
+	*dist = dot(pos-ro, norm) / dot(rd, norm);
 	
-	if(depth < 0.01){
-		if(t < 0.00001f){
-			return 0.1;
-		}else{
-			if (fmod(round(fabs(hit.x)*scale) + round(fabs(hit.z)*scale), 2.0f) < 1.0){
-				return 0.0;
-			}
-			else{
-				return 1.0 - (hit.x*0.001);
-			}
-		}
-
-		return 0.1;
+	if(*dist < 0.0000000001){ 
+		return false;
 	}
-	return 0;
+	*hit = ro + *dist * rd;
+	return true;
 }
 
-float triangle(float3 v0, float3 v1, float3 v2, float3 ro, float3 rd)//, float3 *hit, float *dist)
+bool triangle(float3 v0, float3 v1, float3 v2, float3 ro, float3 rd, float3 *hit, float *dist)
 {
-	float3 position = (float3)(5000.0, 0.0, -500000.0);
-	float output1 = 1.0;
-	float scale = 0.1;
-
-	v0 = position + v0*scale;
-	v1 = position + v1*scale;
-	v2 = position + v2*scale;
-
     float3 edge1 = v1 - v0;
     float3 edge2 = v2 - v0;
-
     float3 pvec = cross(rd, edge2).xyz;
     float det = dot(edge1, pvec);
-	
-    if (det < 0.0) output1 = 0.0;
-    
+    if (det < 0.0) return false;
     float invDet = 1.0 / det;
-    
-	// ------------
     float3 tvec = ro - v0;
     float u = dot(tvec, pvec) * invDet;
-    
-	if (u < 0 || u > 1) output1=0.0;
-    
-	// ------------
+	if (u < 0 || u > 1) return false;
     float3 qvec = cross(tvec, edge1);
     float v = dot(rd, qvec) * invDet;
-    
-    if (v < 0 || u + v > 1) output1=0.0;
+    if (v < 0 || u + v > 1) return false;
 	
-	//
-    float dist = dot(edge2, qvec) * invDet;
-    float3 hit  = ro + rd * (dist);
-
-	//printf("distance = %f\n", dist);
-	//printf("v0 = %2.2v3hlf,  v1 = %2.2v3hlf,  V0-V1 = %2.2v3hlf\n", v0,v1,v2);
-    return output1;
+	*dist = dot(edge2, qvec) * invDet;
+    *hit  = ro + rd * (*dist);
+    return true;
 }
 
 float4 sphere(float3 ray, float3 dir, float3 center, float radius, float4 previous)
@@ -123,43 +88,89 @@ __kernel void Filter (
 	float scx = (float)( pos.x / iResolution.x )*2.0 - 1.0;
 	float scy = (float)( pos.y / iResolution.y )*2.0 - 1.0;
 
-	float3 screenCoords = {scx,scy,0};
+	float3 screenCoords = {pos.x, pos.y, 0 };
+	//float3 screenCoords = {scx,scy,0};
     float4 sum = (float4)(0.0f);
 
 	//
-	float3 CamOrigin = (float3)(500.0, -500.0, -500.0);
-	float3 ViewPlane = CamOrigin + (float3)(-256,-256,-256.0);
+	//float3 CamOrigin = (float3)(500.0, -500.0, -500.0);
+	//float3 ViewPlane = CamOrigin + (float3)(-256,-256,-256.0);
 
-	float3 rayDir = (ViewPlane+(float3)(pos.x,pos.y,0)) - CamOrigin;
-	float3 rayOrigin = ViewPlane+(float3)(rx*AA_amount,ry*AA_amount,0);
+	//float3 rayDir = (ViewPlane+(float3)(pos.x,pos.y,0)) - CamOrigin;
+	//float3 rayOrigin = ViewPlane+(float3)(rx*AA_amount,ry*AA_amount,0);
 
+	/*
+		up
+		forward
+		right=cross(forward, up)
+		up = corss(right, forward)
+		ro = pos - norm()forward
+		px = 0.5*right + 0.5* up
+		rd = px - ro
+	*/
+
+	float3 camPos = (float3)(-8.0,-85.0,95.0);
+	float3 up = (float3)(0.0,0.0,1.0);
+	float3 forward = (float3)(0.0,1.0,0.0);
+	float3 right = cross(forward, up);
+	float3 rayOrigin = camPos - normalize(forward);
+	float3 rayDir = screenCoords - rayOrigin;
+	
 	//
 	float3 hit;
 	float dist;
 	
 	// Floor
-	for(i=0;i<samples;i++){
+	
+	//This wasn't actually doing multisampling yet, so I commented it for now
+	//for(i=0;i<samples;i++){
 		
 		// Random Sample
 		//rx = 0.5-rand( screenCoords.xy*(i) );
 		//ry = 0.5-rand( screenCoords.xy*(i) );
 
 		// Uniform Sample
-		rx = samples/2 - i;
-		ry = samples/2 - i;
-		
+		//rx = samples/2 - i;
+		//ry = samples/2 - i;
+
+		bool hitCube = false;
+		float minDist = 10000000;
+		float3 minHit = (float3)(0.0, 0.0, 0.0);
 		for(k=0; k<*faceCount; k++){
 			v1 = (float3)( verts[faces[3*k]],	verts[faces[3*k]+1],	verts[faces[3*k]+2]   );
 			v2 = (float3)( verts[faces[3*k+1]],	verts[faces[3*k+1]+1],	verts[faces[3*k+1]+2] );
 			v3 = (float3)( verts[faces[3*k+2]],	verts[faces[3*k+2]+1],	verts[faces[3*k+2]+2] );
-
-			sum += (float4)( triangle(v1, v2, v3, rayOrigin, rayDir));
+			float3 hit;
+			float dist;
+			if(triangle(v1, v2, v3, rayOrigin, rayDir, &hit, &dist)){ 
+				if(dist < minDist){ 
+					minDist = dist;
+					minHit = hit;
+				}
+				hitCube = true;
+			}
 		}
 
-		//sum += (float4)( plane1( (float3)(0.0), rayDir,  rayOrigin, sum.x));
-	}
+		if(hitCube){ 
+			sum = (float4)(0.0,0.1,0.7,1.0);
+			//sum += (float4)(0.5,0.5,0.5,1);
+		}
+		else if(plane( (float3)(0.0), (float3)(0.0,1.0,0.0), rayOrigin, rayDir, &hit, &dist) )
+		{
+			float scale = 0.1;
+			//printf("%f, %f, %f\n", hit.x, hit.y, hit.z);
+			//do this calculation for all x, y, z, and it will work regardless of normal
+			if ( fmod( round( fabs(hit.x)*scale) + round(fabs(hit.y)*scale) + round(fabs(hit.z)*scale), 2.0f) < 1.0){
+				sum = (float4)(1.0,1.0,1.0,1.0);
+			}
+			else{
+				sum = (float4)(1.0,0.0,0.0,1.0);
+			}
+				 
+		}
+	//}
 	
-	sum = sum/samples;
+	//sum = sum/samples;
 
 	// Sphere
 	//sum = sphere( CamOrigin + (float3)(pos.s0,pos.s1,1.0f),rayDir, (float3)(0.0), 2.0f, sum );

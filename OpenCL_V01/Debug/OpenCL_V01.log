@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 ﻿Build started 9/29/2014 12:20:39 PM.
      1>Project "C:\Users\Martin\Documents\Visual Studio 2013\Projects\OpenCLPathTracer\OpenCL_V01\OpenCL_V01.vcxproj" on node 2 (Rebuild target(s)).
      1>ClCompile:
@@ -122,3 +123,14 @@
 Build succeeded.
 
 Time Elapsed 00:00:01.97
+=======
+﻿Build started 9/28/2014 12:27:13 PM.
+     1>Project "E:\Users\Ezra\dev\OpenCLPathTracer\OpenCL_V01\OpenCL_V01.vcxproj" on node 2 (Build target(s)).
+     1>Link:
+         OpenCL_V01.vcxproj -> E:\Users\Ezra\dev\OpenCLPathTracer\Debug\OpenCL_V01.exe
+     1>Done Building Project "E:\Users\Ezra\dev\OpenCLPathTracer\OpenCL_V01\OpenCL_V01.vcxproj" (Build target(s)).
+
+Build succeeded.
+
+Time Elapsed 00:00:00.04
+>>>>>>> eb6ec63f47ef965cfc73783853672df0bf6e0626
