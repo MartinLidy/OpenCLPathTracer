@@ -105,8 +105,8 @@ __kernel void Filter (
 	float3 screenCoords = {scx,scy,0};
 
 	// Camera //
-	float3 camPos = (float3)(0.0,-8.0,1.0);
-	float3 forward = normalize((float3)(0.0,1.0,0.0));
+	float3 camPos = (float3)(-2.0,-8.0,1.0);
+	float3 forward = normalize((float3)(1.0,1.0,0.0));
 	float3 up      = normalize((float3)(0.0,0.0,1.0));
 
 	float3 right = normalize(cross(forward, up));
@@ -134,11 +134,14 @@ __kernel void Filter (
 		float3 minHit = (float3)(0.0, 0.0, 0.0);
 
 		// For each face in faces array
+		//printf("From OpenCL: \n");
 		for(k=0; k<*faceCount; k++){
-			v1 = (float3)( verts[faces[3*k]],	verts[faces[3*k]+1],	verts[faces[3*k]+2]   );
-			v2 = (float3)( verts[faces[3*k+1]],	verts[faces[3*k+1]+1],	verts[faces[3*k+1]+2] );
-			v3 = (float3)( verts[faces[3*k+2]],	verts[faces[3*k+2]+1],	verts[faces[3*k+2]+2] );
-			printf("=====\n v1= [%f, %f, %f]\n v2= [%f, %f, %f]\n v3= [%f, %f, %f]\n\n\n", v1.x, v1.y, v1.z, v2.x, v2.y, v2.z, v3.x, v3.y, v3.z);
+			//printf("Face: %d = [%d, %d, %d]\n", k, faces[k*3], faces[k*3+1], faces[k*3+2]);
+			v1 = (float3)( verts[3*faces[3*k+0]+0],	verts[3*faces[3*k+1]+0],	verts[3*faces[3*k+2]+0]   );
+			v2 = (float3)( verts[3*faces[3*k+0]+1],	verts[3*faces[3*k+1]+1],	verts[3*faces[3*k+2]+1] );
+			v3 = (float3)( verts[3*faces[3*k+0]+2],	verts[3*faces[3*k+1]+2],	verts[3*faces[3*k+2]+2] );
+			//printf("  Vert values: %2.2v3hlf, %2.2v3hlf, %2.2v3hlf\n", v1, v2, v3);
+
 			if(triangle(v1, v2, v3, rayOrigin, rayDir, &hit, &dist)){
 				if(dist < minDist){
 					minDist = dist;
