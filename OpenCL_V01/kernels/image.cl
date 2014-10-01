@@ -68,7 +68,7 @@ float4 sphere(float3 ray, float3 dir, float3 center, float radius)
 	L = normalize(LPos - hit);
 
 	// Return lit sphere
-	return (float4)(dot(N,L)* clamp(t,0.0f,1.0f)*att);
+	return (float4)(1.0,1.0,0.0,1.0);//(float4)(dot(N,L)* clamp(t,0.0f,1.0f)*att);
 }
 
 
@@ -100,9 +100,9 @@ __kernel void Filter (
 	float3 screenCoords = {scx,scy,0};
 
 	// Camera //
-	float3 camPos = (float3)(0.0,-50.0,1.0);
-	float3 forward = normalize((float3)(0.0,1.0,0.0));
-	float3 up      = normalize((float3)(0.0,0.0,1.0));
+	float3 camPos = (float3)(0.0,-50.0,-500.0);
+	float3 forward = normalize((float3)(0.0,0.0,1.0));
+	float3 up      = normalize((float3)(0.0,1.0,0.0));
 
 	float3 right = normalize(cross(forward, up));
 	up = normalize(cross(right, forward));
@@ -130,11 +130,13 @@ __kernel void Filter (
 
 		// For each face in faces array
 		for(k=0; k<*faceCount; k++){
+			float3 cubePos = (float3)(10000.0,10000.0,10000.0);
+
 			v1 = (float3)( verts[faces[3*k]],	verts[faces[3*k]+1],	verts[faces[3*k]+2]   );
 			v2 = (float3)( verts[faces[3*k+1]],	verts[faces[3*k+1]+1],	verts[faces[3*k+1]+2] );
 			v3 = (float3)( verts[faces[3*k+2]],	verts[faces[3*k+2]+1],	verts[faces[3*k+2]+2] );
 			
-			if(triangle(v1, v2, v3, rayOrigin, rayDir, &hit, &dist)){
+			if(triangle(v1+cubePos, v2+cubePos, v3+cubePos, rayOrigin, rayDir, &hit, &dist)){
 				if(dist < minDist){
 					minDist = dist;
 					minHit = hit;
@@ -143,7 +145,7 @@ __kernel void Filter (
 			}
 		}
 
-		if(false){//hitCube){
+		if(false){
 			sum = (float4)(0.0,0.1,0.7,1.0);
 		}
 		else if(plane( (float3)(0.0), normalize((float3)(0.0,0.0,1.0)), rayOrigin, rayDir, &hit, &dist) )
@@ -175,7 +177,7 @@ __kernel void Filter (
 	//sum = sum/samples;
 
 	// Lit Sphere
-	//sum = sphere( camPos, rayDir, (float3)(0.0,-100.0,0.0), 0.1f);
+	sum = sphere( camPos, rayDir, (float3)(0.0,-75.0,0.0), 0.1f);
 	
     write_imagef (output, (int2)(pos.x, pos.y), sum);
 }
