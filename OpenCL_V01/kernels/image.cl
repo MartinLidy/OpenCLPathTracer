@@ -17,27 +17,32 @@ bool plane(float3 pos, float3 norm, float3 ro, float3 rd, float3 *hit, float *di
 
 bool triangle(float3 v0, float3 v1, float3 v2, float3 ro, float3 rd, float3 *hit, float *dist)
 {
-	float scale = 0.10;
-	v0 = v0*scale;
-	v1 = v1*scale;
-	v2 = v2*scale;
+	float3 edge1 = v1 - v0;
+	float3 edge2 = v2 - v0;
 
-    float3 edge1 = v1 - v0;
-    float3 edge2 = v2 - v0;
-    float3 pvec = cross(rd, edge2).xyz;
-    float det = dot(edge1, pvec);
-    if (det < 0.0) return false;
-    float invDet = 1.0 / det;
-    float3 tvec = ro - v0;
-    float u = dot(tvec, pvec) * invDet;
+	float3 pvec = cross(rd, edge2);
+
+	float det = dot(edge1, pvec);
+
+	if (det == 0) return false;
+
+	float invDet = 1 / det;
+	float3 tvec = ro - v0;
+
+	float u = dot(tvec, pvec) * invDet;
+
 	if (u < 0 || u > 1) return false;
-    float3 qvec = cross(tvec, edge1);
-    float v = dot(rd, qvec) * invDet;
-    if (v < 0 || u + v > 1) return false;
-	
+
+	float3 qvec = cross(tvec, edge1);
+	float v = dot(rd, qvec) * invDet;
+
+	if (v < 0 || u + v > 1) return false;
+
+
 	*dist = dot(edge2, qvec) * invDet;
-    *hit  = ro + rd * (*dist);
-    return true;
+	*hit = ro + rd* (*dist);
+
+	return true;
 }
 
 float4 sphere(float3 ray, float3 dir, float3 center, float radius)
@@ -100,7 +105,7 @@ __kernel void Filter (
 	float3 screenCoords = {scx,scy,0};
 
 	// Camera //
-	float3 camPos = (float3)(0.0,-50.0,1.0);
+	float3 camPos = (float3)(0.0,-8.0,1.0);
 	float3 forward = normalize((float3)(0.0,1.0,0.0));
 	float3 up      = normalize((float3)(0.0,0.0,1.0));
 
@@ -133,7 +138,7 @@ __kernel void Filter (
 			v1 = (float3)( verts[faces[3*k]],	verts[faces[3*k]+1],	verts[faces[3*k]+2]   );
 			v2 = (float3)( verts[faces[3*k+1]],	verts[faces[3*k+1]+1],	verts[faces[3*k+1]+2] );
 			v3 = (float3)( verts[faces[3*k+2]],	verts[faces[3*k+2]+1],	verts[faces[3*k+2]+2] );
-			
+			printf("=====\n v1= [%f, %f, %f]\n v2= [%f, %f, %f]\n v3= [%f, %f, %f]\n\n\n", v1.x, v1.y, v1.z, v2.x, v2.y, v2.z, v3.x, v3.y, v3.z);
 			if(triangle(v1, v2, v3, rayOrigin, rayDir, &hit, &dist)){
 				if(dist < minDist){
 					minDist = dist;
@@ -143,7 +148,7 @@ __kernel void Filter (
 			}
 		}
 
-		if(false){//hitCube){
+		if(hitCube){
 			sum = (float4)(0.0,0.1,0.7,1.0);
 		}
 		else if(plane( (float3)(0.0), normalize((float3)(0.0,0.0,1.0)), rayOrigin, rayDir, &hit, &dist) )
