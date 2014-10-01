@@ -65,10 +65,10 @@ float4 sphere(float3 ray, float3 dir, float3 center, float radius)
 	float a2 = 0.1;
 	float b2 = 0.1;
 	float att = 1.0 / (1.0 + a2*dist + b2*dist*dist);
-	//L = normalize(LPos - hit); // Point lighting
+	L = normalize(LPos - hit);
 
 	// Return lit sphere
-	return (float4)(dot(N,L)* clamp(t,0.0f,1.0f));
+	return (float4)(dot(N,L)* clamp(t,0.0f,1.0f)*att);
 }
 
 
@@ -162,9 +162,11 @@ __kernel void Filter (
 			//do this calculation for all x, y, z, and it will work regardless of normal
 			if ( fmod( round( fabs(hit.x)*scale) + round(fabs(hit.y)*scale) + round(fabs(hit.z)*scale), 2.0f) < 1.0){
 				sum = dot((float3)(0.0,0.0,1.0), LPos - hit) * att;
+
+				//sum = (float4)(1.0,1.0,1.0,1.0);
 			}	
 			else{
-				sum = (float4)(1.0,0.0,0.0,1.0)* dot((float3)(0.0,3.0,1.0), LPos - hit) * att;
+				sum = (float4)(1.0,0.0,0.0,1.0)* dot((float3)(0.0,0.0,1.0), LPos - hit) * att;
 			}
 				 
 		}
@@ -173,7 +175,7 @@ __kernel void Filter (
 	//sum = sum/samples;
 
 	// Lit Sphere
-	//sum = sphere( camPos, rayDir, (float3)(0.0,100.0,1.0), 0.1f);
+	//sum = sphere( camPos, rayDir, (float3)(0.0,-100.0,0.0), 0.1f);
 	
     write_imagef (output, (int2)(pos.x, pos.y), sum);
 }
