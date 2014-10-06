@@ -15,9 +15,9 @@ bool plane(float3 pos, float3 norm, float3 ro, float3 rd, float3 *hit, float *di
 	return true;
 }
 
-bool triangle(float3 v0, float3 v1, float3 v2, float3 ro, float3 rd, float3 *hit, float *dist)
+bool triangle(float3 v0, float3 v1, float3 v2, float3 ro, float3 rd, float3 *hit, float *dist, float3 *norm)
 {
-	float3 cubePos = (float3)(0.0,0.0,0.0);
+	float3 cubePos = (float3)(0.0,0.0,10.0);
 	v0 = cubePos + v0;
 	v1 = cubePos + v1;
 	v2 = cubePos + v2;
@@ -45,6 +45,7 @@ bool triangle(float3 v0, float3 v1, float3 v2, float3 ro, float3 rd, float3 *hit
 
 	*dist = dot(edge2, qvec) * invDet;
 	*hit = ro + rd* (*dist);
+	*norm = (float3)( edge1.y*edge2.z - edge1.z*edge2.y, edge1.z*edge2.x - edge1.x*edge2.z, edge1.x*edge2.y - edge1.y*edge2.x);
 
 	return true;
 }
@@ -86,6 +87,18 @@ float4 sphere(float3 ray, float3 dir, float3 center, float radius)
 }*/
 
 
+float lightFace(float3 N, float3 Pos){
+
+	// Light attenuation //
+	float3 LPos = (float3)(0.0,5.0,15.0);
+	float Ldist = length(LPos - Pos);
+	float a = 0.1;
+	float b = 0.1;
+	float att = 1.0 / (1.0 + a*Ldist + b*Ldist*Ldist);
+	
+	return dot(N, LPos - Pos) * att;
+}
+
 __kernel void Filter ( 
 	__write_only image2d_t output, 
 	__constant float4* example,
@@ -109,7 +122,7 @@ __kernel void Filter (
 	float3 screenCoords = {scx,scy,0};
 
 	// Camera //
-	float3 camPos = (float3)(0.0,-8.0,1.0);
+	float3 camPos = (float3)(-2.0,-8.0,8.0);
 	float3 forward = normalize((float3)(0.0,1.0,0.0));
 	float3 up      = normalize((float3)(0.0,0.0,1.0));
 
@@ -123,8 +136,16 @@ __kernel void Filter (
 	float3 v1;
 	float3 v2;
 	float3 v3;
-	float3 hit;
+
+	//
 	float dist;
+	float minDist = 10000000;
+	bool hitCube = false;
+
+	float3 hit = (float3)(0.0);
+	float3 norm = (float3)(0.0);
+	float3 minHit = (float3)(0.0);
+	float3 minNorm = (float3)(0.0);
 	
 	//This wasn't actually doing multisampling yet, so I commented it for now
 	//for(i=0;i<samples;i++){
@@ -133,54 +154,37 @@ __kernel void Filter (
 		//rx = 0.5-rand( screenCoords.xy*(i) ); //rx = samples/2 - i;
 		//ry = 0.5-rand( screenCoords.xy*(i) ); //ry = samples/2 - i;
 
-		bool hitCube = false;
-		float minDist = 10000000;
-		float3 minHit = (float3)(0.0, 0.0, 0.0);
-
 		// For each face in faces array
 		for(k=0; k<*faceCount; k++){
-			float3 cubePos = (float3)(10000.0,10000.0,10000.0);
-
-			v1 = (float3)( verts[3*faces[3*k]+0],	verts[3*faces[3*k]+1],	verts[3*faces[3*k]+2] );
+			v1 = (float3)( verts[3*faces[3*k]+0],	verts[3*faces[3*k]+1],		verts[3*faces[3*k]+2] );
 			v2 = (float3)( verts[3*faces[3*k+1]+0],	verts[3*faces[3*k+1]+1],	verts[3*faces[3*k+1]+2] );
 			v3 = (float3)( verts[3*faces[3*k+2]+0],	verts[3*faces[3*k+2]+1],	verts[3*faces[3*k+2]+2] );
 
-			//printf("\nFace: %i  - %i %i %i  ( %2.2v3hlf  %2.2v3hlf  %2.2v3hlf )\n", k, faces[3*k], faces[3*k+1], faces[3*k+2],v1,v2,v3 );
-			//printf("\n %2.2v6hlf \n",verts);
-				
-			//printf("=====\n v1= [%f, %f, %f]\n v2= [%f, %f, %f]\n v3= [%f, %f, %f]\n\n\n", v1.x, v1.y, v1.z, v2.x, v2.y, v2.z, v3.x, v3.y, v3.z);
-			if(triangle(v1, v2, v3, rayOrigin, rayDir, &hit, &dist)){
+			// Colision check
+			if(triangle(v1, v2, v3, rayOrigin, rayDir, &hit, &dist, &norm)){
 				if(dist < minDist){
 					minDist = dist;
 					minHit = hit;
+					minNorm = norm;
 				}
 				hitCube = true;
 			}
 		}
 
 		if(hitCube){
-			sum = (float4)(0.0,0.1,0.7,1.0);
+			sum = (float4)(0.0,0.1,0.7,1.0) * lightFace(minNorm, minHit);
 		}
 		else if(plane( (float3)(0.0), normalize((float3)(0.0,0.0,1.0)), rayOrigin, rayDir, &hit, &dist) )
 		{
-			// Light attenuation
-			float dist = length(hit);
-			float a = 0.1;
-			float b = 0.1;
-			float att = 1.0 / (1.0 + a*dist + b*dist*dist);
-			float3 LPos = (float3)(10,0,40);
-
 			// Plane stuff
 			float scale = 0.1;
 
 			//do this calculation for all x, y, z, and it will work regardless of normal
 			if ( fmod( round( fabs(hit.x)*scale) + round(fabs(hit.y)*scale) + round(fabs(hit.z)*scale), 2.0f) < 1.0){
-				sum = dot((float3)(0.0,0.0,1.0), LPos - hit) * att;
-
-				//sum = (float4)(1.0,1.0,1.0,1.0);
+				sum = lightFace((float3)(0.0,0.0,1.0), hit);
 			}	
 			else{
-				sum = (float4)(1.0,0.0,0.0,1.0)* dot((float3)(0.0,0.0,1.0), LPos - hit) * att;
+				sum = (float4)(1.0,0.0,0.0,1.0) * lightFace((float3)(0.0,0.0,1.0), hit);
 			}
 				 
 		}
