@@ -17,8 +17,13 @@ bool plane(float3 pos, float3 norm, float3 ro, float3 rd, float3 *hit, float *di
 
 bool triangle(float3 v0, float3 v1, float3 v2, float3 ro, float3 rd, float3 *hit, float *dist)
 {
-	float3 edge1 = v1 - v0;
-	float3 edge2 = v2 - v0;
+	float3 cubePos = (float3)(0.0,0.0,0.0);
+	v0 = cubePos + v0;
+	v1 = cubePos + v1;
+	v2 = cubePos + v2;
+
+	float3 edge1 = v2 - v0;
+	float3 edge2 = v1 - v0;
 
 	float3 pvec = cross(rd, edge2);
 
@@ -37,7 +42,6 @@ bool triangle(float3 v0, float3 v1, float3 v2, float3 ro, float3 rd, float3 *hit
 	float v = dot(rd, qvec) * invDet;
 
 	if (v < 0 || u + v > 1) return false;
-
 
 	*dist = dot(edge2, qvec) * invDet;
 	*hit = ro + rd* (*dist);
@@ -137,10 +141,13 @@ __kernel void Filter (
 		for(k=0; k<*faceCount; k++){
 			float3 cubePos = (float3)(10000.0,10000.0,10000.0);
 
-			v1 = (float3)( verts[faces[3*k]],	verts[faces[3*k]+1],	verts[faces[3*k]+2]   );
-			v2 = (float3)( verts[faces[3*k+1]],	verts[faces[3*k+1]+1],	verts[faces[3*k+1]+2] );
-			v3 = (float3)( verts[faces[3*k+2]],	verts[faces[3*k+2]+1],	verts[faces[3*k+2]+2] );
+			v1 = (float3)( verts[3*faces[3*k]+0],	verts[3*faces[3*k]+1],	verts[3*faces[3*k]+2] );
+			v2 = (float3)( verts[3*faces[3*k+1]+0],	verts[3*faces[3*k+1]+1],	verts[3*faces[3*k+1]+2] );
+			v3 = (float3)( verts[3*faces[3*k+2]+0],	verts[3*faces[3*k+2]+1],	verts[3*faces[3*k+2]+2] );
 
+			//printf("\nFace: %i  - %i %i %i  ( %2.2v3hlf  %2.2v3hlf  %2.2v3hlf )\n", k, faces[3*k], faces[3*k+1], faces[3*k+2],v1,v2,v3 );
+			//printf("\n %2.2v6hlf \n",verts);
+				
 			//printf("=====\n v1= [%f, %f, %f]\n v2= [%f, %f, %f]\n v3= [%f, %f, %f]\n\n\n", v1.x, v1.y, v1.z, v2.x, v2.y, v2.z, v3.x, v3.y, v3.z);
 			if(triangle(v1, v2, v3, rayOrigin, rayDir, &hit, &dist)){
 				if(dist < minDist){

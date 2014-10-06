@@ -206,12 +206,14 @@ float *VertsToFloat3(obj_vector** verts, int vertCount){
 
 	// Each vert
 	for (int i = 0; i < vertCount; i++){
-
+		printf("Vert: %d = [", i);
+		
 		// Each coord
 		for (int k = 0; k < 3; k++){
 			output[i * 3 + k] = verts[i]->e[k];
-			//printf("%f", output[i * 3 + k]);
+			printf("%f, ", output[i * 3 + k]);
 		}
+		printf("]\n");
 	}
 
 	return output;
@@ -223,11 +225,13 @@ int *FacesToVerts(obj_face** faces, int faceCount){
 	
 	// Each face
 	for (int i = 0; i < faceCount; i++){
-
+		printf("Face: %d\n", i);
 		// Each vert
 		for (int k = 0; k < 3; k++){
 			output[i * 3 + k] = faces[i]->vertex_index[k];
+			printf("   Vert: %d", output[i * 3 + k]);
 		}
+		printf("\n");
 	}
 
 	return output;
