@@ -9,15 +9,15 @@
 #include "GL/freeglut.h"
 
 #ifdef __APPLE__
-	#include "OpenCL/opencl.h"
+#include "OpenCL/opencl.h"
 #else
-	#include "CL/cl.h"
+#include "CL/cl.h"
 #endif
 
 static cl_command_queue command_queue = NULL;
 static const cl_image_format format = { CL_RGBA, CL_UNORM_INT8 };
 int width = 512;
-int height = 408;
+int height = 512;
 int spp = 0;
 float* pixels = NULL;
 
@@ -85,37 +85,37 @@ static size_t RoundUp(int groupSize, int globalSize) {
 	}
 }
 
-Image LoadImage (const char* path)
+Image LoadImage(const char* path)
 {
-	std::ifstream in (path, std::ios::binary);
+	std::ifstream in(path, std::ios::binary);
 
 	std::string s;
 	in >> s;
 
 	if (s != "P6") {
-		exit (1);
+		exit(1);
 	}
 
 	// Skip comments
 	for (;;) {
-		getline (in, s);
+		getline(in, s);
 
-		if (s.empty ()) {
+		if (s.empty()) {
 			continue;
 		}
 
-		if (s [0] != '#') {
+		if (s[0] != '#') {
 			break;
 		}
 	}
 
-	std::stringstream str (s);
+	std::stringstream str(s);
 	int width, height, maxColor;
 	str >> width >> height;
 	in >> maxColor;
 
 	if (maxColor != 255) {
-		exit (1);
+		exit(1);
 	}
 
 	{
@@ -124,49 +124,49 @@ Image LoadImage (const char* path)
 		getline(in, tmp);
 	}
 
-	std::vector<char> data (width * height * 3);
-	in.read (reinterpret_cast<char*> (data.data ()), data.size ());
+	std::vector<char> data(width * height * 3);
+	in.read(reinterpret_cast<char*> (data.data()), data.size());
 
 	const Image img = { data, width, height };
 	return img;
 }
 
-void SaveImage (const Image& img, const char* path)
+void SaveImage(const Image& img, const char* path)
 {
-	std::ofstream out (path, std::ios::binary);
+	std::ofstream out(path, std::ios::binary);
 
 	out << "P6\n";
 	out << img.width << " " << img.height << "\n";
 	out << "255\n";
-	out.write (img.pixel.data (), img.pixel.size ());
+	out.write(img.pixel.data(), img.pixel.size());
 }
 
-Image RGBtoRGBA (const Image& input)
+Image RGBtoRGBA(const Image& input)
 {
 	Image result;
 	result.width = input.width;
 	result.height = input.height;
 
-	for (std::size_t i = 0; i < input.pixel.size (); i += 3) {
-		result.pixel.push_back (input.pixel [i + 0]);
-		result.pixel.push_back (input.pixel [i + 1]);
-		result.pixel.push_back (input.pixel [i + 2]);
-		result.pixel.push_back (0);
+	for (std::size_t i = 0; i < input.pixel.size(); i += 3) {
+		result.pixel.push_back(input.pixel[i + 0]);
+		result.pixel.push_back(input.pixel[i + 1]);
+		result.pixel.push_back(input.pixel[i + 2]);
+		result.pixel.push_back(0);
 	}
 
 	return result;
 }
 
-Image RGBAtoRGB (const Image& input)
+Image RGBAtoRGB(const Image& input)
 {
 	Image result;
 	result.width = input.width;
 	result.height = input.height;
 
-	for (std::size_t i = 0; i < input.pixel.size (); i += 4) {
-		result.pixel.push_back (input.pixel [i + 0]);
-		result.pixel.push_back (input.pixel [i + 1]);
-		result.pixel.push_back (input.pixel [i + 2]);
+	for (std::size_t i = 0; i < input.pixel.size(); i += 4) {
+		result.pixel.push_back(input.pixel[i + 0]);
+		result.pixel.push_back(input.pixel[i + 1]);
+		result.pixel.push_back(input.pixel[i + 2]);
 	}
 
 	return result;
@@ -231,57 +231,57 @@ objLoader * parseObj(){
 }
 
 
-std::string GetPlatformName (cl_platform_id id)
+std::string GetPlatformName(cl_platform_id id)
 {
 	size_t size = 0;
-	clGetPlatformInfo (id, CL_PLATFORM_NAME, 0, nullptr, &size);
+	clGetPlatformInfo(id, CL_PLATFORM_NAME, 0, nullptr, &size);
 
 	std::string result;
-	result.resize (size);
-	clGetPlatformInfo (id, CL_PLATFORM_NAME, size,
-		const_cast<char*> (result.data ()), nullptr);
+	result.resize(size);
+	clGetPlatformInfo(id, CL_PLATFORM_NAME, size,
+		const_cast<char*> (result.data()), nullptr);
 
 	return result;
 }
 
-std::string GetDeviceName (cl_device_id id)
+std::string GetDeviceName(cl_device_id id)
 {
 	size_t size = 0;
-	clGetDeviceInfo (id, CL_DEVICE_NAME, 0, nullptr, &size);
+	clGetDeviceInfo(id, CL_DEVICE_NAME, 0, nullptr, &size);
 
 	std::string result;
-	result.resize (size);
-	clGetDeviceInfo (id, CL_DEVICE_NAME, size,
-		const_cast<char*> (result.data ()), nullptr);
+	result.resize(size);
+	clGetDeviceInfo(id, CL_DEVICE_NAME, size,
+		const_cast<char*> (result.data()), nullptr);
 
 	return result;
 }
 
-void CheckError (cl_int error)
+void CheckError(cl_int error)
 {
 	if (error != CL_SUCCESS) {
 		std::cerr << "OpenCL call failed with error " << error << std::endl;
 	}
 }
 
-std::string LoadKernel (const char* name)
+std::string LoadKernel(const char* name)
 {
-	std::ifstream in (name);
-	std::string result (
-		(std::istreambuf_iterator<char> (in)),
-		std::istreambuf_iterator<char> ());
+	std::ifstream in(name);
+	std::string result(
+		(std::istreambuf_iterator<char>(in)),
+		std::istreambuf_iterator<char>());
 	return result;
 }
 
-cl_program CreateProgram (const std::string& source,
+cl_program CreateProgram(const std::string& source,
 	cl_context context)
 {
 	// http://www.khronos.org/registry/cl/sdk/1.1/docs/man/xhtml/clCreateProgramWithSource.html
-	size_t lengths [1] = { source.size () };
-	const char* sources [1] = { source.data () };
+	size_t lengths[1] = { source.size() };
+	const char* sources[1] = { source.data() };
 
-	cl_program program = clCreateProgramWithSource (context, 1, sources, lengths, &error);
-	CheckError (error);
+	cl_program program = clCreateProgramWithSource(context, 1, sources, lengths, &error);
+	CheckError(error);
 
 	return program;
 }
@@ -310,11 +310,7 @@ static void AllocateLocalImageMem(void) {
 static void DrawImage(void) {
 	printf("Drawing Image!");
 
-	printf("%i", sizeof(pixels));
-	
-	Image result2 = RGBtoRGBA(LoadImage("test.ppm"));
-
-	glColor3f(1.f, 1.f, 1.f);
+	/*glColor3f(1.f, 1.f, 1.f);
 	glEnable(GL_TEXTURE_2D); //enable tex. mapping
 	glBindTexture(GL_TEXTURE_2D, 0);
 	glPixelStoref(GL_UNPACK_ALIGNMENT, 4);
@@ -322,7 +318,8 @@ static void DrawImage(void) {
 	glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
 	glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 	glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, result2.width, result2.height, 0, GL_RGBA, GL_FLOAT, pixels);
+	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, width, height, 0, GL_RGBA, GL_FLOAT, pixels);
+
 	glBegin(GL_QUADS);
 	glTexCoord2f(0.0, 0.0);
 	glVertex3f(0.0, 0.0, 0.0);
@@ -336,7 +333,35 @@ static void DrawImage(void) {
 	glTexCoord2f(0.0, 1.0);
 	glVertex3f(0.0, glutGet(GLUT_WINDOW_HEIGHT), 0.0);
 	glEnd();
-	glDisable(GL_TEXTURE_2D); //disable tex. mapping
+	glDisable(GL_TEXTURE_2D); //disable tex. mapping*/
+
+	GLuint tex = 0;
+	glGenTextures(1, &tex);
+	glBindTexture(GL_TEXTURE_2D, tex);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, 250, 250, 0, GL_RGB, GL_FLOAT, NULL);
+	glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, 250, 250, GL_RGB, GL_FLOAT, pixels);
+
+	glEnable(GL_TEXTURE_2D);
+	glBindTexture(GL_TEXTURE_2D, tex);
+	glBegin(GL_QUADS);
+	glTexCoord2i(0, 0);
+	glVertex2i(0, 0);
+	glTexCoord2i(1, 0);
+	glVertex2i(1, 0);
+	glTexCoord2i(1, 1);
+	glVertex2i(1, 1);
+	glTexCoord2i(0, 1);
+	glVertex2i(0, 1);
+	glEnd();
+
+	glutSwapBuffers();
+
+
+	/*glClear(GL_COLOR_BUFFER_BIT);
+	glDrawPixels(glutGet(GLUT_WINDOW_WIDTH), glutGet(GLUT_WINDOW_HEIGHT), GL_RGBA, GL_FLOAT, pixels);
+	glFlush();*/
 }
 
 static void Display_cb(void) {
@@ -361,7 +386,7 @@ void UpdateLocalPixels(void) {
 
 	//local pixel array should already be allocated
 	error = clEnqueueReadImage(queue, outputImage2, CL_TRUE, origin, region, 0, 0, pixels, 0, NULL, NULL);
-	
+
 	if (error != CL_SUCCESS) {
 		printf("OpenCL: Error reading output from outputImage into local variable\n");
 		exit(error);
@@ -390,7 +415,7 @@ int runKernelOriginal(){
 	CheckError(clEnqueueNDRangeKernel(queue, kernel, 2, offset, size, nullptr, 0, nullptr, nullptr));
 
 	std::cout << "NDRANGE KERNEL STUFF PASSED!" << std::endl;
-	
+
 	// Prepare the result image, set to black
 	Image result = RGBtoRGBA(LoadImage("test.ppm"));
 	std::fill(result.pixel.begin(), result.pixel.end(), 0);
@@ -400,7 +425,7 @@ int runKernelOriginal(){
 	// Get the result back to the host
 	std::size_t origin[3] = { 0, 0, 0 };
 	std::size_t region[3] = { result.width, result.height, 1 };
-	error = clEnqueueReadImage(queue, outputImage, CL_TRUE,origin, region, 0, 0, pixels, 0, nullptr, nullptr);
+	error = clEnqueueReadImage(queue, outputImage, CL_TRUE, origin, region, 0, 0, pixels, 0, nullptr, nullptr);
 	CheckError(error);
 
 	std::cout << "NDRANGE KERNEL STUFF BLAH BLAH" << std::endl;
@@ -433,38 +458,38 @@ int runKernel(){
 	CheckError(error);
 
 	Image result = RGBtoRGBA(LoadImage("test.ppm"));
-	
+
 	// Prepare the result image, set to black
 	//std::fill(result.pixel.begin(), result.pixel.end(), 0);
 
 	// Get the result back to the host
 	std::size_t origin[3] = { 0 };
-	std::size_t region[3] = {result.width, result.height, 1 };
+	std::size_t region[3] = { result.width, result.height, 1 };
 
-	// Get the result back to the host
-	error = clEnqueueReadImage(queue, outputImage, CL_TRUE,origin, region, 0, 0,result.pixel.data(), 0, nullptr, nullptr);
+	/*// Get the result back to the host
+	error = clEnqueueReadImage(queue, outputImage, CL_TRUE, origin, region, 0, 0, result.pixel.data(), 0, nullptr, nullptr);
 
 	// Save and finish up
 	SaveImage(RGBAtoRGB(result), "output.ppm");
 
 	std::cout << "Finished.  Press any key to continue" << std::endl;
-	std::getchar();
+	std::getchar();*/
 
 	std::cout << "About to do stuff with Queque again /n" << std::endl;
 
 	// Save image into pixels
 	//error = clEnqueueReadImage(queue, outputImage2, CL_TRUE, origin, region, 0, 0, pixels, 0, NULL, NULL);
-	//error = clEnqueueReadImage(queue, outputImage, CL_TRUE, origin, region, 0, 0, pixels, 0, nullptr, nullptr);
+	error = clEnqueueReadImage(queue, outputImage, CL_TRUE, origin, region, 0, 0, pixels, 0, nullptr, nullptr);
 	CheckError(error);
 	std::cout << "Finished reading image" << std::endl;
 
 	clFlush(queue); //issue all queued opencl commands to device
 	clFinish(queue); //wait till processing is done
 
-	//UpdateLocalPixels();
+	UpdateLocalPixels();
 
 	//std::cout << "About to update local pixel array" << std::endl;
-	
+
 	/*clEnqueueReadImage(queue, outputImage2, CL_TRUE, origin, region, 0, 0, pixels, 0, nullptr, nullptr);
 
 	clFlush(queue); //issue all queued opencl commands to device
@@ -526,7 +551,7 @@ static void UpdateKernel(void) {
 	//runKernelOriginal();
 
 	std::cout << "Background Thread" << std::endl;
-	
+
 	glutPostRedisplay(); //show new render on-screen
 }
 
@@ -539,7 +564,7 @@ static void SetGLUTCallbacks(void) {
 	//glutKeyboardFunc(Keyboard_cb);
 	//glutMotionFunc(Mouse_cb);
 	//glutPassiveMotionFunc(Mouse_cb);
-	glutIdleFunc(UpdateKernel);
+	//glutIdleFunc(UpdateKernel);
 }
 
 
@@ -557,7 +582,7 @@ static void SetupWindow(int argc, char **argv) {
 void SetupGLUT(int argc, char** argv) {
 	std::cout << "Setup Window" << std::endl;
 	SetupWindow(argc, argv);
-	
+
 	std::cout << "Setup GLUT" << std::endl;
 	SetGLUTCallbacks();
 
@@ -567,7 +592,7 @@ void SetupGLUT(int argc, char** argv) {
 
 
 int setupOpenCL(){
-	
+
 	/* Initalize Platform IDs */
 	cl_uint platformIdCount = 0;
 	clGetPlatformIDs(0, nullptr, &platformIdCount);
@@ -622,10 +647,8 @@ int setupOpenCL(){
 
 	std::cout << "Context created" << std::endl;
 
-
 	// Create a program from source
-	program = CreateProgram(LoadKernel("kernels/image.cl"),
-		context);
+	program = CreateProgram(LoadKernel("kernels/image.cl"), context);
 
 	CheckError(clBuildProgram(program, deviceIdCount, deviceIds.data(),
 		"-D FILTER_SIZE=1", nullptr, nullptr));
@@ -653,7 +676,7 @@ int setupOpenCL(){
 	height = image.height;
 	width = image.width;
 
-	outputImage = clCreateImage2D(context, CL_MEM_WRITE_ONLY, &format, width, height, 0,pixels, &error);
+	outputImage = clCreateImage2D(context, CL_MEM_WRITE_ONLY, &format, width, height, 0, pixels, &error);
 	CheckError(error);
 
 	/* PARSING OBJECTS BITCHES */
@@ -691,6 +714,7 @@ int setupOpenCL(){
 	return 0;
 }
 
+
 int main ()
 {
 	std::cout << "Starting OpenCL" << std::endl;
@@ -701,17 +725,13 @@ int main ()
 
 	// Windowing system
 	std::cout << "GLUT" << std::endl;
-	SetupGLUT(0, nullptr);	
+	char *argv[1] = {(char*)"" };
+	SetupGLUT(1, argv);
 
 	// Create Kernel
 	//createKernel();
+	UpdateKernel();
 
 	// Main Loop
 	glutMainLoop();
-
-	//std::cout << "Finished.  Press any key to continue" << std::endl;
-	//std::getchar();
-
-	// RUns Kernel
-	//runKernel();
 }
