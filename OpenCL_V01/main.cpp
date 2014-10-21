@@ -179,17 +179,39 @@ float *VertsToFloat3(obj_vector** verts, int vertCount){
 
 	// Each vert
 	for (int i = 0; i < vertCount; i++){
-		//printf("Vert: %d = [", i);
-
 		// Each coord
 		for (int k = 0; k < 3; k++){
 			output[i * 3 + k] = verts[i]->e[k];
-			//printf("%f, ", output[i * 3 + k]);
 		}
-		//printf("]\n");
 	}
 
 	return output;
+}
+
+double *GetObjectMaterials(objLoader* object, int faceCount){
+	int arraySize = faceCount * 3;
+	double *materials = (double*)malloc(arraySize * sizeof(double));
+
+	// Each face
+	for (int i = 0; i < faceCount; i++){
+		for (int k = 0; k < 3; k++){
+			materials[i * 3 + k] = object->materialList[object->faceList[i]->material_index]->diff[k];
+		}
+	}
+
+	return materials;
+}
+
+int *FacesToMats(objLoader* object, int faceCount){
+	int arraySize = faceCount;
+	int *faceMats = (int*)malloc(arraySize * sizeof(int));
+
+	// Each face
+	for (int i = 0; i < faceCount; i++){
+		faceMats[i] = object->faceList[i]->material_index;
+	}
+
+	return faceMats;
 }
 
 int *FacesToVerts(obj_face** faces, int faceCount){
@@ -224,8 +246,7 @@ objLoader * parseObj(){
 	printf("\n");
 
 	printf("Number of faces: %i\n", objData->faceCount);
-
-	printf("Material List: %d\n", objData->materialList[objData->faceList[0]->material_index]->spec);
+	printf("Material List: %d\n", objData->materialList[objData->faceList[0]->material_index]->diff);
 
 	return objData;
 }
@@ -356,8 +377,6 @@ static void DrawImage(void) {
 	glVertex2i(0, 1);
 	glEnd();
 
-	glutSwapBuffers();
-
 
 	/*glClear(GL_COLOR_BUFFER_BIT);
 	glDrawPixels(glutGet(GLUT_WINDOW_WIDTH), glutGet(GLUT_WINDOW_HEIGHT), GL_RGBA, GL_FLOAT, pixels);
@@ -369,7 +388,6 @@ static void Display_cb(void) {
 
 	glClear(GL_COLOR_BUFFER_BIT);
 	glRasterPos2i(0, 0); //set raster drawing position
-	DrawImage();
 
 	//swap buffers, for double buffering
 	glutSwapBuffers();
@@ -448,37 +466,35 @@ int runKernelOriginal(){
 }
 
 int runKernel(){
+	Image result = RGBtoRGBA(LoadImage("test.ppm"));
+
 	// Run the processing
-	// http://www.khronos.org/registry/cl/sdk/1.1/docs/man/xhtml/clEnqueueNDRangeKernel.html
 	std::size_t offset[3] = { 0 };
-	std::size_t size[3] = { width, height, 1 };
+	std::size_t size[3] = { result.width, result.height, 1 };
 
 	std::cout << "About to do stuff with Queque /n" << std::endl;
 	error = clEnqueueNDRangeKernel(queue, kernel, 2, offset, size, nullptr, 0, nullptr, nullptr);
 	CheckError(error);
 
-	Image result = RGBtoRGBA(LoadImage("test.ppm"));
-
 	// Prepare the result image, set to black
-	//std::fill(result.pixel.begin(), result.pixel.end(), 0);
+	std::fill(result.pixel.begin(), result.pixel.end(), 0);
 
 	// Get the result back to the host
 	std::size_t origin[3] = { 0 };
 	std::size_t region[3] = { result.width, result.height, 1 };
 
-	/*// Get the result back to the host
+	// Get the result back to the host
 	error = clEnqueueReadImage(queue, outputImage, CL_TRUE, origin, region, 0, 0, result.pixel.data(), 0, nullptr, nullptr);
 
 	// Save and finish up
 	SaveImage(RGBAtoRGB(result), "output.ppm");
 
 	std::cout << "Finished.  Press any key to continue" << std::endl;
-	std::getchar();*/
+	std::getchar();
 
-	std::cout << "About to do stuff with Queque again /n" << std::endl;
+	std::cout << "About to do stuff with Queue again /n" << std::endl;
 
 	// Save image into pixels
-	//error = clEnqueueReadImage(queue, outputImage2, CL_TRUE, origin, region, 0, 0, pixels, 0, NULL, NULL);
 	error = clEnqueueReadImage(queue, outputImage, CL_TRUE, origin, region, 0, 0, pixels, 0, nullptr, nullptr);
 	CheckError(error);
 	std::cout << "Finished reading image" << std::endl;
@@ -497,7 +513,6 @@ int runKernel(){
 	std::cout<<"About to update local pixel array"<<std::endl;
 
 	UpdateLocalPixels(); //update local image*/
-
 	return 0;
 }
 
@@ -656,12 +671,12 @@ int setupOpenCL(){
 	std::cout << "Program created" << std::endl;
 
 	/* Send log to CMD window */
-	/*size_t log_size;
+	size_t log_size;
 	clGetProgramBuildInfo(program, deviceIds[0], CL_PROGRAM_BUILD_LOG, 0, NULL, &log_size);
 	char *log = (char *)malloc(log_size);
 
 	clGetProgramBuildInfo(program, deviceIds[0], CL_PROGRAM_BUILD_LOG, log_size, log, NULL);
-	printf("%s\n", log);*/
+	printf("%s\n", log);
 
 	/* Create the Kernel */
 	kernel = clCreateKernel(program, "Filter", &error);
@@ -687,19 +702,27 @@ int setupOpenCL(){
 
 	// export faces
 	int* faceArray = FacesToVerts(loadedObject->faceList, loadedObject->faceCount);
+	double* materials = GetObjectMaterials(loadedObject, loadedObject->faceCount);
+	int* faceMats = FacesToMats(loadedObject, loadedObject->faceCount);
 
 	// create buffers
 	cl_mem faceData = clCreateBuffer(context, CL_MEM_READ_ONLY | CL_MEM_COPY_HOST_PTR, sizeof(int)*loadedObject->faceCount * 3, faceArray, &error);
 	cl_mem vertData = clCreateBuffer(context, CL_MEM_READ_ONLY | CL_MEM_COPY_HOST_PTR, sizeof(float)*loadedObject->vertexCount * 3, vertArray, &error);
 	cl_mem faceCount = clCreateBuffer(context, CL_MEM_READ_ONLY | CL_MEM_COPY_HOST_PTR, sizeof(int), &loadedObject->faceCount, &error);
-	cl_mem faceMatData = clCreateBuffer(context, CL_MEM_READ_ONLY | CL_MEM_COPY_HOST_PTR, sizeof(int)*loadedObject->faceCount * 3, faceArray, &error);
+
+	cl_mem materialData = clCreateBuffer(context, CL_MEM_READ_ONLY | CL_MEM_COPY_HOST_PTR, sizeof(double)*loadedObject->faceCount * 3, materials, &error);
+	cl_mem faceMatData = clCreateBuffer(context, CL_MEM_READ_ONLY | CL_MEM_COPY_HOST_PTR, sizeof(int)*loadedObject->faceCount, faceMats, &error);
 
 	// Setup the kernel arguments
 	clSetKernelArg(kernel, 0, sizeof (cl_mem), &outputImage);
 	clSetKernelArg(kernel, 1, sizeof (cl_mem), &vertData);
 	clSetKernelArg(kernel, 2, sizeof (cl_mem), &faceData);
 	clSetKernelArg(kernel, 3, sizeof (cl_mem), &faceCount);
+
 	clSetKernelArg(kernel, 4, sizeof (cl_mem), &faceMatData);
+	clSetKernelArg(kernel, 5, sizeof (cl_mem), &materialData);
+
+	//DrawImage();
 
 	// Free MALLOC when finished
 	free(vertArray);

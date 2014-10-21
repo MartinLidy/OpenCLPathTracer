@@ -108,10 +108,10 @@ float lightFace(float3 N, float3 Pos){
 }
 
 // Find intersecting face
-int getIntersection(float3 rayOrigin, float3 rayDir, __constant int* faces, __constant float* verts, __constant int* faceCount){//, *hit, *dist, *norm){
+int getIntersection(float3 rayOrigin, float3 rayDir, float3* hit2, float3* norm2, __constant int* faces, __constant float* verts, __constant int* faceCount){//, *hit, *dist, *norm){
 	float3 v1,v2,v3;
 	float3 minHit, minNorm;
-	float minDist;
+	float minDist = 999999.0;
 	int k;
 
 	float3 hit;
@@ -137,22 +137,27 @@ int getIntersection(float3 rayOrigin, float3 rayDir, __constant int* faces, __co
 		}
 	}
 
+	*hit2 = minHit;
+	*norm2 = minNorm;
+
 	return hitFaceIndex;
 }
 
-float3 getPointColor( int objIndex ){
+float3 getPointColor( int objIndex, __constant int* faceMat, __constant float* Materials ){
+	
 	// Floor
 	if (objIndex == -1){
 		return (float3)(1.0,0.9,0.9);
 	}
-	return (float3)(1.0,0.2,0.2);
+
+	return (float3)( Materials[faceMat[objIndex]+0], Materials[faceMat[objIndex]+1], Materials[faceMat[objIndex]+2] );
 }
 
-float3 traceRay( float3 rayPos, float3 rayDir, __constant int* faces, __constant float* verts, __constant int* faceCount )
+float3 traceRay( float3 rayPos, float3 rayDir, __constant int* faces, __constant float* verts, __constant int* faceCount, __constant int* faceMat, __constant float* Materials )
 {
-	float3 point_color = (float3)(0.0);
 	float3 reflect_color = (float3)(0.0);
 	float3 refract_color = (float3)(0.0);
+	float3 point_color = (float3)(0.0);
 	float3 hit, norm, minHit, minNorm;
 	float3 sum = (float3)(0.0);
 	float dist;
@@ -160,11 +165,12 @@ float3 traceRay( float3 rayPos, float3 rayDir, __constant int* faces, __constant
 	int objIndex;
 	bool hitCube = false;
 
-	objIndex = getIntersection( rayPos, rayDir, faces, verts, faceCount);//, hit, dist, norm);
+	objIndex = getIntersection( rayPos, rayDir, &hit, &norm, faces, verts, faceCount);
 
 	// Didnt hit geometry
 	if(objIndex != -1){
-		point_color = getPointColor( objIndex );
+		point_color = getPointColor( objIndex, faceMat, Materials);
+		point_color = point_color * lightFace(norm, hit);
 	}
 
 	// Hit the floor
@@ -179,7 +185,7 @@ float3 traceRay( float3 rayPos, float3 rayDir, __constant int* faces, __constant
 		}	
 		else{
 			point_color = (float3)(1.0,0.0,0.0) * lightFace((float3)(0.0,0.0,1.0), hit);
-		}		 
+		}
 	}
 
 	/*if ( object is reflective )
@@ -196,10 +202,12 @@ float3 traceRay( float3 rayPos, float3 rayDir, __constant int* faces, __constant
 }
 
 __kernel void Filter ( 
-	__write_only image2d_t output, 
+	__write_only image2d_t output,
 	__constant float verts[],
 	__constant int faces[],
-	__constant int* faceCount)
+	__constant int* faceCount,
+	__constant int* faceMat,
+	__constant float Materials[])
 {
 	// MSAA //
 	int i = 0;
@@ -242,7 +250,7 @@ __kernel void Filter (
 		//ry = 0.5-rand( screenCoords.xy*(i) ); //ry = samples/2 - i;
 		
 		// Tracing
-		sum.xyz = traceRay(rayOrigin, rayDir, faces, verts, faceCount);
+		sum.xyz = traceRay(rayOrigin, rayDir, faces, verts, faceCount, faceMat, Materials);
 	//}
 	
 	//sum = sum/samples;
