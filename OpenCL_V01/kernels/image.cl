@@ -98,7 +98,7 @@ float3 refractionFace(float3 rayDir, float3 N){
 float lightFace(float3 N, float3 Pos){
 
 	// Light attenuation //
-	float3 LPos = (float3)(0.0,0.0,7.0);
+	float3 LPos = (float3)(10.0,10.0,7.0);
 	float Ldist = length(LPos - Pos);
 	float a = 0.1;
 	float b = 0.01;

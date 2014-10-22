@@ -591,7 +591,7 @@ static void SetupWindow(int argc, char **argv) {
 	glutInitDisplayMode(GLUT_RGBA | GLUT_DOUBLE);
 	glutInitWindowSize(width, height);
 	glutInitWindowPosition(150, 50);
-	glutCreateWindow("OPENCL Render V0.000000001");
+	glutCreateWindow("OPENCL Render");
 }
 
 void SetupGLUT(int argc, char** argv) {
