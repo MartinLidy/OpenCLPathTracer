@@ -202,6 +202,17 @@ double *GetObjectMaterials(objLoader* object, int faceCount){
 	return materials;
 }
 
+static double* getFaceNormals(objLoader objData, int faceCount){
+	/*int arraySize = objData->normalCount * 3;
+	double *normals = (double*)malloc(arraySize * sizeof(double));
+
+	for (int i = 0; i < faceCount; i++){
+		for (int k = 0; k < 3; k++){
+			normals[3*i + k] = objData->normalList[3 * (objData->faceList[i]->normal_index) + k];
+		}
+	}*/	
+}
+
 int *FacesToMats(objLoader* object, int faceCount){
 	int arraySize = faceCount;
 	int *faceMats = (int*)malloc(arraySize * sizeof(int));
@@ -220,14 +231,11 @@ int *FacesToVerts(obj_face** faces, int faceCount){
 
 	// Each face
 	for (int i = 0; i < faceCount; i++){
-		//printf("Face: %d\n", i);
 
 		// Each vert
 		for (int k = 0; k < 3; k++){
-			output[i * 3 + k] = faces[i]->vertex_index[k];
-			//printf("   Vert: %d", output[i * 3 + k]);
+			output[i * 3 + k] = faces[i]->vertex_index[k];//printf("   Vert: %d", output[i * 3 + k]);
 		}
-		//printf("\n");
 	}
 
 	return output;
@@ -704,6 +712,8 @@ int setupOpenCL(){
 	int* faceArray = FacesToVerts(loadedObject->faceList, loadedObject->faceCount);
 	double* materials = GetObjectMaterials(loadedObject, loadedObject->faceCount);
 	int* faceMats = FacesToMats(loadedObject, loadedObject->faceCount);
+
+	//double* normals = getFaceNormals(vertArray, faceArray, loadedObject->faceCount, loadedObject->vertexCount);
 
 	// create buffers
 	cl_mem faceData = clCreateBuffer(context, CL_MEM_READ_ONLY | CL_MEM_COPY_HOST_PTR, sizeof(int)*loadedObject->faceCount * 3, faceArray, &error);

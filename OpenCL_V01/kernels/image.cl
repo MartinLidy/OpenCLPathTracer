@@ -98,7 +98,7 @@ float3 refractionFace(float3 rayDir, float3 N){
 float lightFace(float3 N, float3 Pos){
 
 	// Light attenuation //
-	float3 LPos = (float3)(10.0,10.0,7.0);
+	float3 LPos = (float3)(0,0.0,7.0);
 	float Ldist = length(LPos - Pos);
 	float a = 0.1;
 	float b = 0.01;
@@ -170,7 +170,7 @@ float3 traceRay( float3 rayPos, float3 rayDir, __constant int* faces, __constant
 	// Didnt hit geometry
 	if(objIndex != -1){
 		point_color = getPointColor( objIndex, faceMat, Materials);
-		point_color = point_color * lightFace(norm, hit);
+		//point_color = point_color * lightFace(norm, hit);
 	}
 
 	// Hit the floor
@@ -225,7 +225,7 @@ __kernel void Filter (
 	float3 screenCoords = {scx,scy,0};
 
 	// Camera //
-	float3 camPos = (float3)(-2.0,-8.0,8.0);
+	float3 camPos = (float3)(-2.0,-20.0,8.0);
 	float3 forward = normalize((float3)(0.3,1.0,0.0));
 	float3 up      = normalize((float3)(0.0,0.0,1.0));
 
