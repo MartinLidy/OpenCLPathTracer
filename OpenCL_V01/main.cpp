@@ -188,14 +188,16 @@ float *VertsToFloat3(obj_vector** verts, int vertCount){
 	return output;
 }
 
-double *GetObjectMaterials(objLoader* object, int faceCount){
-	int arraySize = faceCount * 3;
-	double *materials = (double*)malloc(arraySize * sizeof(double));
+float *GetObjectMaterials(objLoader* object, int faceCount){
+	int arraySize = object->materialCount * 3;
+	float *materials = (float*)malloc(arraySize * sizeof(float));
+
 
 	// Each face
-	for (int i = 0; i < faceCount; i++){
+	for (int i = 0; i < object->materialCount; i++){
 		for (int k = 0; k < 3; k++){
-			materials[i * 3 + k] = object->materialList[object->faceList[i]->material_index]->diff[k];
+			materials[i * 3 + k] = object->materialList[i]->diff[k];
+			//materials[i * 3 + k] = object->materialList[object->faceList[i]->material_index]->diff[k];
 		}
 	}
 
@@ -219,7 +221,7 @@ int *FacesToMats(objLoader* object, int faceCount){
 
 	// Each face
 	for (int i = 0; i < faceCount; i++){
-		faceMats[i] = object->faceList[i]->material_index;
+		faceMats[i] = object->faceList[i]->material_index*3;
 	}
 
 	return faceMats;
@@ -710,7 +712,7 @@ int setupOpenCL(){
 
 	// export faces
 	int* faceArray = FacesToVerts(loadedObject->faceList, loadedObject->faceCount);
-	double* materials = GetObjectMaterials(loadedObject, loadedObject->faceCount);
+	float* materials = GetObjectMaterials(loadedObject, loadedObject->faceCount);
 	int* faceMats = FacesToMats(loadedObject, loadedObject->faceCount);
 
 	//double* normals = getFaceNormals(vertArray, faceArray, loadedObject->faceCount, loadedObject->vertexCount);
@@ -720,7 +722,7 @@ int setupOpenCL(){
 	cl_mem vertData = clCreateBuffer(context, CL_MEM_READ_ONLY | CL_MEM_COPY_HOST_PTR, sizeof(float)*loadedObject->vertexCount * 3, vertArray, &error);
 	cl_mem faceCount = clCreateBuffer(context, CL_MEM_READ_ONLY | CL_MEM_COPY_HOST_PTR, sizeof(int), &loadedObject->faceCount, &error);
 
-	cl_mem materialData = clCreateBuffer(context, CL_MEM_READ_ONLY | CL_MEM_COPY_HOST_PTR, sizeof(double)*loadedObject->faceCount * 3, materials, &error);
+	cl_mem materialData = clCreateBuffer(context, CL_MEM_READ_ONLY | CL_MEM_COPY_HOST_PTR, sizeof(float)*loadedObject->materialCount * 3, materials, &error);
 	cl_mem faceMatData = clCreateBuffer(context, CL_MEM_READ_ONLY | CL_MEM_COPY_HOST_PTR, sizeof(int)*loadedObject->faceCount, faceMats, &error);
 
 	// Setup the kernel arguments
